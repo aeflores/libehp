@@ -1,7 +1,6 @@
-#ifndef eh_frame_hpp
-#define eh_frame_hpp
+#ifndef ehp_hpp
+#define ehp_hpp
 
-#include <libIRDB-core.hpp>
 #include <iostream>
 #include <iomanip>
 #include <fstream>
@@ -13,14 +12,16 @@
 #include <elf.h>
 #include <algorithm>
 #include <memory>
+#include <set>
 
-#include <exeio.h>
-#include "dwarf2.h"
-
-
+#include "ehp_dwarf2.hpp"
 
 
-typedef std::map<libIRDB::virtual_offset_t, libIRDB::Instruction_t*> OffsetMap_t;
+namespace EHP
+{
+
+using namespace std;
+
 
 template <int ptrsize>
 class eh_frame_util_t
@@ -169,7 +170,6 @@ class cie_contents_t : eh_frame_util_t<ptrsize>
 		const uint32_t max, 
 		const uint64_t eh_addr);
 	void print() const ;
-	void build_ir(libIRDB::Instruction_t* insn) const;
 };
 
 template <int ptrsize>
@@ -254,9 +254,8 @@ class lsda_call_site_t : private eh_frame_util_t<ptrsize>
 
 	void print() const;
 
-	bool appliesTo(const libIRDB::Instruction_t* insn) const;
+//	bool appliesTo(const libIRDB::Instruction_t* insn) const;
 
-	void build_ir(libIRDB::Instruction_t* insn, const std::vector<lsda_type_table_entry_t <ptrsize> > &type_table, const uint8_t& tt_encoding, const OffsetMap_t& om, libIRDB::FileIR_t* firp) const;
 };
 
 
@@ -287,9 +286,12 @@ class lsda_t : private eh_frame_util_t<ptrsize>
 	
 	lsda_t() ;
 
-	bool parse_lsda(const uint64_t lsda_addr, const libIRDB::DataScoop_t* gcc_except_scoop, const uint64_t fde_region_start);
+	bool parse_lsda(const uint64_t lsda_addr, 
+	                /*const libIRDB::DataScoop_t* gcc_except_scoop,  */
+			const uint8_t *gcc_except_scoop_data,
+	                const uint64_t fde_region_start
+	                );
 	void print() const;
-	void build_ir(libIRDB::Instruction_t* insn, const OffsetMap_t& om, libIRDB::FileIR_t* firp) const;
 
         const call_site_table_t<ptrsize> GetCallSites() const { return call_site_table;}
 
@@ -322,7 +324,7 @@ class fde_contents_t : eh_frame_util_t<ptrsize>
 		fde_end_addr(end_addr)
 	{} 
 
-	bool appliesTo(const libIRDB::Instruction_t* insn) const;
+//	bool appliesTo(const libIRDB::Instruction_t* insn) const;
 
 	uint64_t GetFDEStartAddress() const { return fde_start_addr; } 
 	uint64_t GetFDEEndAddress() const {return fde_end_addr; }
@@ -341,11 +343,11 @@ class fde_contents_t : eh_frame_util_t<ptrsize>
 		const uint8_t* const data, 
 		const uint64_t max, 
 		const uint64_t eh_addr,
-		const libIRDB::DataScoop_t* gcc_except_scoop);
+		const uint8_t *gcc_except_scoop_data
+		/* const libIRDB::DataScoop_t* gcc_except_scoop*/);
 
 	void print() const;
 
-	void build_ir(libIRDB::Instruction_t* insn, const OffsetMap_t &om, libIRDB::FileIR_t* firp) const;
 
 };
 
@@ -358,11 +360,7 @@ class split_eh_frame_t
 	public:
 
 		virtual bool parse()=0;
-		virtual void build_ir() const =0;
 		virtual void print() const=0;
-		virtual libIRDB::Instruction_t* find_lp(libIRDB::Instruction_t*) const =0;
-
-		static std::unique_ptr<split_eh_frame_t> factory(libIRDB::FileIR_t *firp);
 
 };
 
@@ -371,32 +369,32 @@ class split_eh_frame_impl_t : public split_eh_frame_t
 {
 	private: 
 
+/*
 	libIRDB::FileIR_t* firp;
 	libIRDB::DataScoop_t* eh_frame_scoop;
 	libIRDB::DataScoop_t* eh_frame_hdr_scoop;
 	libIRDB::DataScoop_t* gcc_except_table_scoop;
 	OffsetMap_t offset_to_insn_map;
+*/
 	std::vector<cie_contents_t <ptrsize> > cies;
 	std::set<fde_contents_t <ptrsize> > fdes;
 
-
-	bool init_offset_map();
 
 	bool iterate_fdes();
 
 	public:
 
+/*
 	split_eh_frame_impl_t(libIRDB::FileIR_t* p_firp);
+*/
 
 	bool parse();
 
 	void print() const;
 
-	void build_ir() const;
 
-	libIRDB::Instruction_t* find_lp(libIRDB::Instruction_t*) const ;
 };
 
-void split_eh_frame(libIRDB::FileIR_t* firp);
-
+}
 #endif
+
