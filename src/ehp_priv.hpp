@@ -9,7 +9,6 @@
 #include <string.h>
 #include <map>
 #include <assert.h>
-#include <elf.h>
 #include <algorithm>
 #include <memory>
 #include <set>
@@ -243,6 +242,8 @@ class lsda_call_site_t : public LSDACallSite_t, private eh_frame_util_t<ptrsize>
 	const std::vector<lsda_call_site_action_t <ptrsize> >& getActionTableInternal() const { return action_table; }
 	      std::vector<lsda_call_site_action_t <ptrsize> >& getActionTableInternal()       { return action_table; }
 
+	uint64_t getCallSiteAddress() const  { return call_site_addr ; } 
+	uint64_t getCallSiteEndAddress() const  { return call_site_end_addr ; } 
 	uint64_t getLandingPadAddress() const  { return landing_pad_addr ; } 
 
 	bool parse_lcs(	
@@ -267,7 +268,7 @@ class lsda_call_site_t : public LSDACallSite_t, private eh_frame_util_t<ptrsize>
 template <int ptrsize>  using call_site_table_t = std::vector<lsda_call_site_t <ptrsize> > ;
 
 template <int ptrsize>
-class lsda_t : private LSDA_t, private eh_frame_util_t<ptrsize>
+class lsda_t : public LSDA_t, private eh_frame_util_t<ptrsize>
 {
 	private:
 	uint8_t landing_pad_base_encoding;
@@ -296,7 +297,7 @@ class lsda_t : private LSDA_t, private eh_frame_util_t<ptrsize>
 	                );
 	void print() const;
 
-        shared_ptr<CallSiteVector_t> getCallSites() const { assert(0); } 
+        shared_ptr<CallSiteVector_t> getCallSites() const ;
         const call_site_table_t<ptrsize> getCallSitesInternal() const { return call_site_table;}
 
 };
@@ -342,7 +343,7 @@ class fde_contents_t : public FDEContents_t, eh_frame_util_t<ptrsize>
 	const eh_program_t<ptrsize>& getProgram() const ;
 	eh_program_t<ptrsize>& getProgram() ;
 
-	shared_ptr<LSDA_t> getLSDA() const { assert(0); }
+	shared_ptr<LSDA_t> getLSDA() const { return shared_ptr<LSDA_t>(new lsda_t<ptrsize>(lsda)) ;  }
 	const lsda_t<ptrsize>& getLSDAInternal() const { return lsda; }
 
 	bool parse_fde(

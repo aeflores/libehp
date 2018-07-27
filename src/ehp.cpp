@@ -6,16 +6,19 @@
 #include <string.h>
 #include <map>
 #include <assert.h>
-#include <elf.h>
 #include <algorithm>
 #include <memory>
 
-#include "ehp.hpp"
+#include <ehp.hpp>
 #include "ehp_priv.hpp"
 #include "scoop_replacement.hpp"
 
+#include <elfio/elfio.hpp>
+#include <elf.h>
+
 using namespace std;
 using namespace EHP;
+using namespace ELFIO;
 
 #define ALLOF(s) begin(s), end(s)
 
@@ -1613,6 +1616,17 @@ void split_eh_frame_impl_t<ptrsize>::print() const
 	});
 }
 
+
+template <int ptrsize>
+shared_ptr<CallSiteVector_t> lsda_t<ptrsize>::getCallSites() const 
+{
+	auto ret=shared_ptr<CallSiteVector_t>(new CallSiteVector_t());
+	transform(ALLOF(call_site_table), back_inserter(*ret), 
+		[](const lsda_call_site_t<ptrsize> &a) { return shared_ptr<LSDACallSite_t>(new lsda_call_site_t<ptrsize>(a));});
+	return shared_ptr<CallSiteVector_t>(ret);
+}
+
+
 template <int ptrsize>
 const shared_ptr<FDEVector_t>  split_eh_frame_impl_t<ptrsize>::getFDEs() const
 {
@@ -1633,12 +1647,41 @@ const shared_ptr<CIEVector_t>  split_eh_frame_impl_t<ptrsize>::getCIEs() const
 	
 
 
-unique_ptr<EHFrameParser_t> EHFrameParser_t::factory(const char* const filename)
+unique_ptr<const EHFrameParser_t> EHFrameParser_t::factory(const string filename)
 {
-	assert(0);
+	auto elfiop=unique_ptr<elfio>(new elfio);
+	if(!elfiop->load(filename))
+	{
+		throw invalid_argument(string() + "Cannot open file: " + filename);
+	}
+
+	auto get_info=[&](const string name) -> pair<string,uint64_t>
+		{
+			const auto &sec=elfiop->sections[name.c_str()];
+			auto contents=string(sec->get_data(), sec->get_size());
+			auto addr=sec->get_address();
+			return {contents,addr};	
+
+		};
+
+	const auto eh_frame_section=get_info(".eh_frame");
+	const auto eh_frame_hdr_section=get_info(".eh_frame_hdr");
+	const auto gcc_except_table_section=get_info(".gcc_except_table");
+
+	const auto ptrsize = elfiop->get_class()==ELFCLASS64 ? 8 :
+	                     elfiop->get_class()==ELFCLASS32 ? 4 : 
+	                     0; 
+	if(ptrsize==0)
+		throw invalid_argument(string() + "Invalid ELF class in : " + filename);
+
+	return EHFrameParser_t::factory(ptrsize,
+			eh_frame_section.first, eh_frame_section.second,
+			eh_frame_hdr_section.first, eh_frame_hdr_section.second,
+			gcc_except_table_section.first, gcc_except_table_section.second);
+
 }
 
-unique_ptr<EHFrameParser_t> EHFrameParser_t::factory(
+unique_ptr<const EHFrameParser_t> EHFrameParser_t::factory(
 	uint8_t ptrsize,
 	const string eh_frame_data, const uint64_t eh_frame_data_start_addr,
 	const string eh_frame_hdr_data, const uint64_t eh_frame_hdr_data_start_addr,
@@ -1648,13 +1691,17 @@ unique_ptr<EHFrameParser_t> EHFrameParser_t::factory(
 	const auto eh_frame_sr=ScoopReplacement_t(eh_frame_data,eh_frame_data_start_addr);
 	const auto eh_frame_hdr_sr=ScoopReplacement_t(eh_frame_hdr_data,eh_frame_hdr_data_start_addr);
 	const auto gcc_except_table_sr=ScoopReplacement_t(gcc_except_table_data,gcc_except_table_data_start_addr);
+	auto ret_val=(EHFrameParser_t*)nullptr;
 	if(ptrsize==4)
-		return unique_ptr<EHFrameParser_t>(new split_eh_frame_impl_t<4>(eh_frame_sr,eh_frame_hdr_sr,gcc_except_table_sr));
+		ret_val=new split_eh_frame_impl_t<4>(eh_frame_sr,eh_frame_hdr_sr,gcc_except_table_sr);
 	else if(ptrsize==8)
-		return unique_ptr<EHFrameParser_t>(new split_eh_frame_impl_t<8>(eh_frame_sr,eh_frame_hdr_sr,gcc_except_table_sr));
+		ret_val=new split_eh_frame_impl_t<8>(eh_frame_sr,eh_frame_hdr_sr,gcc_except_table_sr);
 	else
 		throw std::out_of_range("ptrsize must be 4 or 8");
-	
+
+	ret_val->parse();
+
+	return unique_ptr<const EHFrameParser_t>(ret_val);
 }
 
 	

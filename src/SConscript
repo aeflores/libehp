@@ -9,6 +9,7 @@ files="ehp.cpp"
 
 cpppath='''
 	../include
+	../third-party/elfio-code
         '''
 
 
@@ -16,7 +17,7 @@ LIBPATH="$SECURITY_TRANSFORMS_HOME/lib"
 LIBS=Split("")
 
 myenv=myenv.Clone(CPPPATH=Split(cpppath))
-myenv.Append(CXXFLAGS = " -std=c++11 -Wall -Werror -fmax-errors=1")
+myenv.Append(CXXFLAGS = " -std=c++11 -Wall -Werror -fmax-errors=2")
 
 lib=myenv.Library("ehp",  Split(files), LIBPATH=LIBPATH, LIBS=LIBS)
 install=myenv.Install("../lib/", lib)

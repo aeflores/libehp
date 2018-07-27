@@ -92,6 +92,8 @@ class LSDACallSite_t
 	public:
 	virtual ~LSDACallSite_t() {}
 	virtual shared_ptr<LSDCallSiteActionVector_t> getActionTable() const =0;
+	virtual uint64_t getCallSiteAddress() const  =0;
+	virtual uint64_t getCallSiteEndAddress() const  =0;
 	virtual uint64_t getLandingPadAddress() const  =0;
 	virtual void print() const=0;
 };
@@ -140,8 +142,8 @@ class EHFrameParser_t
 	virtual const shared_ptr<FDEVector_t> getFDEs() const =0;
 	virtual const shared_ptr<CIEVector_t> getCIEs() const =0;
 
-	static unique_ptr<EHFrameParser_t> factory(const char* const filename);
-	static unique_ptr<EHFrameParser_t> factory(
+	static unique_ptr<const EHFrameParser_t> factory(const string filename);
+	static unique_ptr<const EHFrameParser_t> factory(
 		uint8_t ptrsize,
 		const string eh_frame_data, const uint64_t eh_frame_data_start_addr,
 		const string eh_frame_hdr_data, const uint64_t eh_frame_hdr_data_start_addr,
