@@ -5,6 +5,7 @@
 #include <map>
 #include <memory>
 #include <set>
+#include <vector>
 
 
 namespace EHP
@@ -19,7 +20,7 @@ class EHProgramInstruction_t
 	EHProgramInstruction_t() {}
 	EHProgramInstruction_t(const EHProgramInstruction_t&) {}
 	public: 
-	virtual ~EHProgramInstruction_t() =0;
+	virtual ~EHProgramInstruction_t() {}
 	virtual void print(uint64_t &pc, int64_t caf=1) const=0;
 	virtual bool isNop() const =0;
 	virtual bool isRestoreState() const =0;
