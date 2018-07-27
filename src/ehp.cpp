@@ -11,11 +11,13 @@
 #include <memory>
 
 #include "ehp.hpp"
+#include "ehp_priv.hpp"
+#include "scoop_replacement.hpp"
 
 using namespace std;
 using namespace EHP;
 
-#define WHOLE_CONTAINER(s) begin(s), end(s)
+#define ALLOF(s) begin(s), end(s)
 
 template <int ptrsize>
 template <class T> 
@@ -783,10 +785,10 @@ bool eh_program_insn_t<ptrsize>::Advance(uint64_t &cur_addr, uint64_t CAF) const
 }
 
 template <int ptrsize>
-const vector<uint8_t>& eh_program_insn_t<ptrsize>::GetBytes() const { return program_bytes; }
+const vector<uint8_t>& eh_program_insn_t<ptrsize>::getBytes() const { return program_bytes; }
 
 template <int ptrsize>
-vector<uint8_t>& eh_program_insn_t<ptrsize>::GetBytes() { return program_bytes; }
+vector<uint8_t>& eh_program_insn_t<ptrsize>::getBytes() { return program_bytes; }
 
 
 
@@ -796,7 +798,7 @@ vector<uint8_t>& eh_program_insn_t<ptrsize>::GetBytes() { return program_bytes; 
 template <int ptrsize>
 bool operator<(const eh_program_insn_t<ptrsize>& a, const eh_program_insn_t<ptrsize>& b)
 {
-	return a.GetBytes() < b.GetBytes(); 
+	return a.getBytes() < b.getBytes(); 
 }
 
 template <int ptrsize>
@@ -840,15 +842,15 @@ bool eh_program_t<ptrsize>::parse_program(
 }
 
 template <int ptrsize>
-const vector<eh_program_insn_t <ptrsize> >& eh_program_t<ptrsize>::GetInstructions() const { return instructions; }
+const vector<eh_program_insn_t <ptrsize> >& eh_program_t<ptrsize>::getInstructionsInternal() const { return instructions; }
 
 template <int ptrsize>
-vector<eh_program_insn_t <ptrsize> >& eh_program_t<ptrsize>::GetInstructions() { return instructions; }
+vector<eh_program_insn_t <ptrsize> >& eh_program_t<ptrsize>::getInstructionsInternal() { return instructions; }
 
 template <int ptrsize>
 bool operator<(const eh_program_t<ptrsize>& a, const eh_program_t<ptrsize>& b)
 {
-	return a.GetInstructions() < b.GetInstructions(); 
+	return a.getInstructionsInternal() < b.getInstructionsInternal(); 
 }
 
 template <int ptrsize>
@@ -869,29 +871,29 @@ cie_contents_t<ptrsize>::cie_contents_t() :
 
 
 template <int ptrsize>
-const eh_program_t<ptrsize>& cie_contents_t<ptrsize>::GetProgram() const { return eh_pgm; }
+const eh_program_t<ptrsize>& cie_contents_t<ptrsize>::getProgram() const { return eh_pgm; }
 
 template <int ptrsize>
-uint64_t cie_contents_t<ptrsize>::GetCAF() const { return code_alignment_factor; }
+uint64_t cie_contents_t<ptrsize>::getCAF() const { return code_alignment_factor; }
 
 template <int ptrsize>
-int64_t cie_contents_t<ptrsize>::GetDAF() const { return data_alignment_factor; }
+int64_t cie_contents_t<ptrsize>::getDAF() const { return data_alignment_factor; }
 
 template <int ptrsize>
-uint64_t cie_contents_t<ptrsize>::GetPersonality() const { return personality; }
+uint64_t cie_contents_t<ptrsize>::getPersonality() const { return personality; }
 
 template <int ptrsize>
-uint64_t cie_contents_t<ptrsize>::GetReturnRegister() const { return return_address_register_column; }
+uint64_t cie_contents_t<ptrsize>::getReturnRegister() const { return return_address_register_column; }
 
 
 template <int ptrsize>
-string cie_contents_t<ptrsize>::GetAugmentation() const { return augmentation; }
+string cie_contents_t<ptrsize>::getAugmentation() const { return augmentation; }
 
 template <int ptrsize>
-uint8_t cie_contents_t<ptrsize>::GetLSDAEncoding() const { return lsda_encoding;}
+uint8_t cie_contents_t<ptrsize>::getLSDAEncoding() const { return lsda_encoding;}
 
 template <int ptrsize>
-uint8_t cie_contents_t<ptrsize>::GetFDEEncoding() const { return fde_encoding;}
+uint8_t cie_contents_t<ptrsize>::getFDEEncoding() const { return fde_encoding;}
 
 
 template <int ptrsize>
@@ -1041,7 +1043,7 @@ lsda_call_site_action_t<ptrsize>::lsda_call_site_action_t() :
 
 
 template <int ptrsize>
-int64_t lsda_call_site_action_t<ptrsize>::GetAction() const { return action;}
+int64_t lsda_call_site_action_t<ptrsize>::getAction() const { return action;}
 
 
 template <int ptrsize>
@@ -1072,7 +1074,7 @@ void lsda_call_site_action_t<ptrsize>::print() const
 template <int ptrsize>
 bool operator< (const lsda_call_site_action_t <ptrsize> &lhs, const lsda_call_site_action_t <ptrsize> &rhs)
 { 	
-	return lhs.GetAction() < rhs.GetAction(); 
+	return lhs.getAction() < rhs.getAction(); 
 }
 
 template <int ptrsize>
@@ -1082,13 +1084,13 @@ lsda_type_table_entry_t<ptrsize>::lsda_type_table_entry_t() :
 
 
 template <int ptrsize>
-uint64_t lsda_type_table_entry_t<ptrsize>::GetTypeInfoPointer() const { return pointer_to_typeinfo; }
+uint64_t lsda_type_table_entry_t<ptrsize>::getTypeInfoPointer() const { return pointer_to_typeinfo; }
 
 template <int ptrsize>
-uint64_t lsda_type_table_entry_t<ptrsize>::GetEncoding() const { return tt_encoding; }
+uint64_t lsda_type_table_entry_t<ptrsize>::getEncoding() const { return tt_encoding; }
 
 template <int ptrsize>
-uint64_t lsda_type_table_entry_t<ptrsize>::GetTTEncodingSize() const { return tt_encoding_size; }
+uint64_t lsda_type_table_entry_t<ptrsize>::getTTEncodingSize() const { return tt_encoding_size; }
 
 
 template <int ptrsize>
@@ -1236,7 +1238,7 @@ void lsda_call_site_t<ptrsize>::print() const
 
 
 template <int ptrsize>
-uint8_t lsda_t<ptrsize>::GetTTEncoding() const { return type_table_encoding; }
+uint8_t lsda_t<ptrsize>::getTTEncoding() const { return type_table_encoding; }
 
 template <int ptrsize>
 lsda_t<ptrsize>::lsda_t() :
@@ -1257,21 +1259,21 @@ template <int ptrsize>
 bool lsda_t<ptrsize>::parse_lsda(
                                  const uint64_t lsda_addr, 
                                  //const DataScoop_t* gcc_except_scoop, 
-                                 const uint8_t* gcc_except_scoop_data, 
+                                 const ScoopReplacement_t *gcc_except_scoop, 
                                  const uint64_t fde_region_start
                                 )
 {
 	// make sure there's a scoop and that we're in the range.
 	if(!gcc_except_scoop)
 		return true;
-	if(lsda_addr<gcc_except_scoop->GetStart()->GetVirtualOffset())
+	if(lsda_addr<gcc_except_scoop->getStart())
 		return true;
-	if(lsda_addr>=gcc_except_scoop->GetEnd()->GetVirtualOffset())
+	if(lsda_addr>=gcc_except_scoop->getEnd())
 		return true;
 
-	const auto &data=gcc_except_scoop->GetContents();
-	const auto data_addr=gcc_except_scoop->GetStart()->GetVirtualOffset();
-	const auto max=gcc_except_scoop->GetContents().size();
+	const auto &data=gcc_except_scoop->getContents();
+	const auto data_addr=gcc_except_scoop->getStart();
+	const auto max=gcc_except_scoop->getContents().size();
 	auto pos=uint32_t(lsda_addr-data_addr);
 	auto start_pos=pos;
 
@@ -1332,9 +1334,9 @@ bool lsda_t<ptrsize>::parse_lsda(
 	{
 		for(const auto cs_tab_entry : call_site_table)
 		{
-			for(const auto act_tab_entry : cs_tab_entry.GetActionTable())
+			for(const auto act_tab_entry : cs_tab_entry.getActionTableInternal())
 			{
-				const auto type_filter=act_tab_entry.GetAction();
+				const auto type_filter=act_tab_entry.getAction();
 				const auto parse_and_insert_tt_entry = [&] (const unsigned long index) -> bool
 				{
 					// cout<<"Parsing TypeTable at -"<<index<<endl;
@@ -1421,16 +1423,16 @@ fde_contents_t<ptrsize>::fde_contents_t() :
 
 
 template <int ptrsize>
-const cie_contents_t<ptrsize>& fde_contents_t<ptrsize>::GetCIE() const { return cie_info; }
+const cie_contents_t<ptrsize>& fde_contents_t<ptrsize>::getCIE() const { return cie_info; }
 
 template <int ptrsize>
-cie_contents_t<ptrsize>& fde_contents_t<ptrsize>::GetCIE() { return cie_info; }
+cie_contents_t<ptrsize>& fde_contents_t<ptrsize>::getCIE() { return cie_info; }
 
 template <int ptrsize>
-const eh_program_t<ptrsize>& fde_contents_t<ptrsize>::GetProgram() const { return eh_pgm; }
+const eh_program_t<ptrsize>& fde_contents_t<ptrsize>::getProgram() const { return eh_pgm; }
 
 template <int ptrsize>
-eh_program_t<ptrsize>& fde_contents_t<ptrsize>::GetProgram() { return eh_pgm; }
+eh_program_t<ptrsize>& fde_contents_t<ptrsize>::getProgram() { return eh_pgm; }
 
 template <int ptrsize>
 bool fde_contents_t<ptrsize>::parse_fde(
@@ -1439,7 +1441,7 @@ bool fde_contents_t<ptrsize>::parse_fde(
 	const uint8_t* const data, 
 	const uint64_t max, 
 	const uint64_t eh_addr,
-	const uint8_t* gcc_except_scoop_data)
+	const ScoopReplacement_t* gcc_except_scoop)
 //	const DataScoop_t* gcc_except_scoop)
 {
 	auto &c=*this;
@@ -1462,25 +1464,25 @@ bool fde_contents_t<ptrsize>::parse_fde(
 		return true;
 
 	auto fde_start_addr=uint64_t(0);
-	if(this->read_type_with_encoding(c.GetCIE().GetFDEEncoding(),fde_start_addr, pos, eh_frame_scoop_data, max, eh_addr))
+	if(this->read_type_with_encoding(c.getCIE().getFDEEncoding(),fde_start_addr, pos, eh_frame_scoop_data, max, eh_addr))
 		return true;
 
 	auto fde_range_len=uint64_t(0);
-	if(this->read_type_with_encoding(c.GetCIE().GetFDEEncoding() & 0xf /* drop pc-rel bits */,fde_range_len, pos, eh_frame_scoop_data, max, eh_addr))
+	if(this->read_type_with_encoding(c.getCIE().getFDEEncoding() & 0xf /* drop pc-rel bits */,fde_range_len, pos, eh_frame_scoop_data, max, eh_addr))
 		return true;
 
 	auto fde_end_addr=fde_start_addr+fde_range_len;
 
 	auto augmentation_data_length=uint64_t(0);
-	if(c.GetCIE().GetAugmentation().find("z") != string::npos)
+	if(c.getCIE().getAugmentation().find("z") != string::npos)
 	{
 		if(this->read_uleb128(augmentation_data_length, pos, eh_frame_scoop_data, max))
 			return true;
 	}
 	auto lsda_addr=uint64_t(0);
-	if(c.GetCIE().GetLSDAEncoding()!= DW_EH_PE_omit)
+	if(c.getCIE().getLSDAEncoding()!= DW_EH_PE_omit)
 	{
-		if(this->read_type_with_encoding(c.GetCIE().GetLSDAEncoding(), lsda_addr, pos, eh_frame_scoop_data, max, eh_addr))
+		if(this->read_type_with_encoding(c.getCIE().getLSDAEncoding(), lsda_addr, pos, eh_frame_scoop_data, max, eh_addr))
 			return true;
 		if(c.lsda.parse_lsda(lsda_addr,gcc_except_scoop, fde_start_addr))
 			return true;
@@ -1513,7 +1515,7 @@ void fde_contents_t<ptrsize>::print() const
 	cout<<"		FDE len:		"<<dec<<fde_range_len<<endl;
 	cout<<"		FDE LSDA:		"<<hex<<lsda_addr<<endl;
 	eh_pgm.print(fde_start_addr);
-	if(GetCIE().GetLSDAEncoding()!= DW_EH_PE_omit)
+	if(getCIE().getLSDAEncoding()!= DW_EH_PE_omit)
 		lsda.print();
 	else
 		cout<<"		No LSDA for this FDE."<<endl;
@@ -1527,10 +1529,10 @@ void fde_contents_t<ptrsize>::print() const
 template <int ptrsize>
 bool split_eh_frame_impl_t<ptrsize>::iterate_fdes()
 {
-	auto eh_frame_scoop_data=(const uint8_t* const)eh_frame_scoop->GetContents().c_str();
+	auto eh_frame_scoop_data=(const uint8_t* const)eh_frame_scoop->getContents().c_str();
 	auto data=eh_frame_scoop_data;
-	auto eh_addr= eh_frame_scoop->GetStart()->GetVirtualOffset();
-	auto max=eh_frame_scoop->GetContents().size();
+	auto eh_addr= eh_frame_scoop->getStart();
+	auto max=eh_frame_scoop->getContents().size();
 	auto position=uint32_t(0);
 
 	//cout << "----------------------------------------"<<endl;
@@ -1568,7 +1570,7 @@ bool split_eh_frame_impl_t<ptrsize>::iterate_fdes()
 			fde_contents_t<ptrsize> f;
 			auto cie_position = cie_offset_position - cie_offset;
 			//cout << "FDE length="<< dec << act_length << " cie=[" << setw(6) << hex << cie_position << "]" << endl;
-			if(f.parse_fde(old_position, cie_position, data, max, eh_addr, gcc_except_table_scoop))
+			if(f.parse_fde(old_position, cie_position, data, max, eh_addr, gcc_except_table_scoop.get()))
 				return true;
 			//const auto old_fde_size=fdes.size();
 			fdes.insert(f);
@@ -1610,6 +1612,52 @@ void split_eh_frame_impl_t<ptrsize>::print() const
 		p.print();
 	});
 }
+
+template <int ptrsize>
+const shared_ptr<FDEVector_t>  split_eh_frame_impl_t<ptrsize>::getFDEs() const
+{
+	auto ret=shared_ptr<FDEVector_t>(new FDEVector_t());
+	transform(ALLOF(fdes), back_inserter(*ret), 
+		[](const fde_contents_t<ptrsize> &a) { return shared_ptr<FDEContents_t>(new fde_contents_t<ptrsize>(a));});
+	return shared_ptr<FDEVector_t>(ret);
+}
+
+template <int ptrsize>
+const shared_ptr<CIEVector_t>  split_eh_frame_impl_t<ptrsize>::getCIEs() const
+{
+	auto ret=shared_ptr<CIEVector_t>(new CIEVector_t());
+	transform(ALLOF(cies), back_inserter(*ret), 
+		[](const cie_contents_t<ptrsize> &a){ return shared_ptr<CIEContents_t>(new cie_contents_t<ptrsize>(a));});
+	return ret;
+}
+	
+
+
+unique_ptr<EHFrameParser_t> EHFrameParser_t::factory(const char* const filename)
+{
+	assert(0);
+}
+
+unique_ptr<EHFrameParser_t> EHFrameParser_t::factory(
+	uint8_t ptrsize,
+	const string eh_frame_data, const uint64_t eh_frame_data_start_addr,
+	const string eh_frame_hdr_data, const uint64_t eh_frame_hdr_data_start_addr,
+	const string gcc_except_table_data, const uint64_t gcc_except_table_data_start_addr
+	)
+{
+	const auto eh_frame_sr=ScoopReplacement_t(eh_frame_data,eh_frame_data_start_addr);
+	const auto eh_frame_hdr_sr=ScoopReplacement_t(eh_frame_hdr_data,eh_frame_hdr_data_start_addr);
+	const auto gcc_except_table_sr=ScoopReplacement_t(gcc_except_table_data,gcc_except_table_data_start_addr);
+	if(ptrsize==4)
+		return unique_ptr<EHFrameParser_t>(new split_eh_frame_impl_t<4>(eh_frame_sr,eh_frame_hdr_sr,gcc_except_table_sr));
+	else if(ptrsize==8)
+		return unique_ptr<EHFrameParser_t>(new split_eh_frame_impl_t<8>(eh_frame_sr,eh_frame_hdr_sr,gcc_except_table_sr));
+	else
+		throw std::out_of_range("ptrsize must be 4 or 8");
+	
+}
+
+	
 
 
 

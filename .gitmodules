@@ -1,0 +1,3 @@
+[submodule "third-party/elfio-code"]
+	path = third-party/elfio-code
+	url = https://git.code.sf.net/p/elfio/code

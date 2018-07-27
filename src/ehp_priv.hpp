@@ -1,5 +1,5 @@
-#ifndef ehp_hpp
-#define ehp_hpp
+#ifndef ehp_priv_hpp
+#define ehp_priv_hpp
 
 #include <iostream>
 #include <iomanip>
@@ -15,6 +15,7 @@
 #include <set>
 
 #include "ehp_dwarf2.hpp"
+#include "scoop_replacement.hpp"
 
 
 namespace EHP
@@ -24,7 +25,7 @@ using namespace std;
 
 
 template <int ptrsize>
-class eh_frame_util_t
+class eh_frame_util_t 
 {
 	public: 
 	template <class T> 
@@ -66,7 +67,7 @@ class eh_frame_util_t
 };
 
 template <int ptrsize>
-class eh_program_insn_t 
+class eh_program_insn_t  : public EHProgramInstruction_t
 {
 	public: 
 	
@@ -99,8 +100,8 @@ class eh_program_insn_t
 
 	bool Advance(uint64_t &cur_addr, uint64_t CAF) const ;
 
-	const std::vector<uint8_t>& GetBytes() const ;
-	std::vector<uint8_t>& GetBytes() ;
+	const std::vector<uint8_t>& getBytes() const ;
+	std::vector<uint8_t>& getBytes() ;
 
 	private:
 
@@ -111,7 +112,7 @@ template <int ptrsize>
 bool operator<(const eh_program_insn_t<ptrsize>& a, const eh_program_insn_t<ptrsize>& b);
 
 template <int ptrsize>
-class eh_program_t
+class eh_program_t : public EHProgram_t
 {
 	public:
 	void push_insn(const eh_program_insn_t<ptrsize> &i); 
@@ -122,8 +123,10 @@ class eh_program_t
 		const uint32_t& program_start_position, 
 		const uint8_t* const data, 
 		const uint32_t &max_program_pos);
-	const std::vector<eh_program_insn_t <ptrsize> >& GetInstructions() const ;
-	std::vector<eh_program_insn_t <ptrsize> >& GetInstructions() ;
+        virtual shared_ptr<EHProgramInstructionVector_t> getInstructions() const { assert(0); }
+	std::vector<eh_program_insn_t <ptrsize> >& getInstructionsInternal() ;
+	const std::vector<eh_program_insn_t <ptrsize> >& getInstructionsInternal() const ;
+
 	private:
 	std::vector<eh_program_insn_t <ptrsize> > instructions;
 };
@@ -132,7 +135,7 @@ template <int ptrsize>
 bool operator<(const eh_program_t<ptrsize>& a, const eh_program_t<ptrsize>& b);
 
 template <int ptrsize>
-class cie_contents_t : eh_frame_util_t<ptrsize>
+class cie_contents_t : public CIEContents_t, private eh_frame_util_t<ptrsize>
 {
 	private:
 	uint64_t cie_position;
@@ -154,15 +157,15 @@ class cie_contents_t : eh_frame_util_t<ptrsize>
 
 	cie_contents_t() ;
 	
-	const eh_program_t<ptrsize>& GetProgram() const ;
-	uint64_t GetCAF() const ;
-	int64_t GetDAF() const ;
-	uint64_t GetPersonality() const ;
-	uint64_t GetReturnRegister() const ;
+	const eh_program_t<ptrsize>& getProgram() const ;
+	uint64_t getCAF() const ;
+	int64_t getDAF() const ;
+	uint64_t getPersonality() const ;
+	uint64_t getReturnRegister() const ;
 
-	std::string GetAugmentation() const ;
-	uint8_t GetLSDAEncoding() const ;
-	uint8_t GetFDEEncoding() const ;
+	std::string getAugmentation() const ;
+	uint8_t getLSDAEncoding() const ;
+	uint8_t getFDEEncoding() const ;
 
 	bool parse_cie(
 		const uint32_t &cie_position, 
@@ -173,14 +176,14 @@ class cie_contents_t : eh_frame_util_t<ptrsize>
 };
 
 template <int ptrsize>
-class lsda_call_site_action_t : private eh_frame_util_t<ptrsize>
+class lsda_call_site_action_t : public LSDACallSiteAction_t, private eh_frame_util_t<ptrsize>
 {
 	private:
 	int64_t action;
 
 	public:
 	lsda_call_site_action_t() ;
-	int64_t GetAction() const ;
+	int64_t getAction() const ;
 
 	bool parse_lcsa(uint32_t& pos, const uint8_t* const data, const uint64_t max, bool &end);
 	void print() const;
@@ -190,7 +193,7 @@ template <int ptrsize>
 bool operator< (const lsda_call_site_action_t <ptrsize> &lhs, const lsda_call_site_action_t <ptrsize> &rhs);
 
 template <int ptrsize>
-class lsda_type_table_entry_t: private eh_frame_util_t<ptrsize>
+class lsda_type_table_entry_t: public LSDATypeTableEntry_t, private eh_frame_util_t<ptrsize>
 {
 	private:
 	uint64_t pointer_to_typeinfo;
@@ -200,9 +203,9 @@ class lsda_type_table_entry_t: private eh_frame_util_t<ptrsize>
 	public:
 	lsda_type_table_entry_t() ; 
 
-	uint64_t GetTypeInfoPointer() const ;
-	uint64_t GetEncoding() const ;
-	uint64_t GetTTEncodingSize() const ;
+	uint64_t getTypeInfoPointer() const ;
+	uint64_t getEncoding() const ;
+	uint64_t getTTEncodingSize() const ;
 
 	bool parse(
 		const uint64_t p_tt_encoding, 	
@@ -218,7 +221,7 @@ class lsda_type_table_entry_t: private eh_frame_util_t<ptrsize>
 };
 
 template <int ptrsize>
-class lsda_call_site_t : private eh_frame_util_t<ptrsize>
+class lsda_call_site_t : public LSDACallSite_t, private eh_frame_util_t<ptrsize>
 {
 	private:
 	uint64_t call_site_offset;
@@ -236,10 +239,11 @@ class lsda_call_site_t : private eh_frame_util_t<ptrsize>
 	public:
 	lsda_call_site_t() ;
 
-	const std::vector<lsda_call_site_action_t <ptrsize> >& GetActionTable() const { return action_table; }
-	      std::vector<lsda_call_site_action_t <ptrsize> >& GetActionTable()       { return action_table; }
+	shared_ptr<LSDCallSiteActionVector_t> getActionTable() const       { assert(0); }
+	const std::vector<lsda_call_site_action_t <ptrsize> >& getActionTableInternal() const { return action_table; }
+	      std::vector<lsda_call_site_action_t <ptrsize> >& getActionTableInternal()       { return action_table; }
 
-	uint64_t GetLandingPadAddress() const  { return landing_pad_addr ; } 
+	uint64_t getLandingPadAddress() const  { return landing_pad_addr ; } 
 
 	bool parse_lcs(	
 		const uint64_t action_table_start_addr, 	
@@ -263,7 +267,7 @@ class lsda_call_site_t : private eh_frame_util_t<ptrsize>
 template <int ptrsize>  using call_site_table_t = std::vector<lsda_call_site_t <ptrsize> > ;
 
 template <int ptrsize>
-class lsda_t : private eh_frame_util_t<ptrsize>
+class lsda_t : private LSDA_t, private eh_frame_util_t<ptrsize>
 {
 	private:
 	uint8_t landing_pad_base_encoding;
@@ -282,25 +286,25 @@ class lsda_t : private eh_frame_util_t<ptrsize>
 
 	public:
 
-	uint8_t GetTTEncoding() const ;
+	uint8_t getTTEncoding() const ;
 	
 	lsda_t() ;
 
 	bool parse_lsda(const uint64_t lsda_addr, 
-	                /*const libIRDB::DataScoop_t* gcc_except_scoop,  */
-			const uint8_t *gcc_except_scoop_data,
+			const ScoopReplacement_t* gcc_except_scoop_data,
 	                const uint64_t fde_region_start
 	                );
 	void print() const;
 
-        const call_site_table_t<ptrsize> GetCallSites() const { return call_site_table;}
+        shared_ptr<CallSiteVector_t> getCallSites() const { assert(0); } 
+        const call_site_table_t<ptrsize> getCallSitesInternal() const { return call_site_table;}
 
 };
 
 
 
 template <int ptrsize>
-class fde_contents_t : eh_frame_util_t<ptrsize>
+class fde_contents_t : public FDEContents_t, eh_frame_util_t<ptrsize> 
 {
 	uint32_t fde_position;
 	uint32_t cie_position;
@@ -326,16 +330,20 @@ class fde_contents_t : eh_frame_util_t<ptrsize>
 
 //	bool appliesTo(const libIRDB::Instruction_t* insn) const;
 
-	uint64_t GetFDEStartAddress() const { return fde_start_addr; } 
-	uint64_t GetFDEEndAddress() const {return fde_end_addr; }
+	uint64_t getStartAddress() const { return fde_start_addr; } 
+	uint64_t getEndAddress() const {return fde_end_addr; }
 
-	const cie_contents_t<ptrsize>& GetCIE() const ;
-	cie_contents_t<ptrsize>& GetCIE() ;
+	uint64_t getFDEStartAddress() const { return fde_start_addr; } 
+	uint64_t getFDEEndAddress() const {return fde_end_addr; }
 
-	const eh_program_t<ptrsize>& GetProgram() const ;
-	eh_program_t<ptrsize>& GetProgram() ;
+	const cie_contents_t<ptrsize>& getCIE() const ;
+	cie_contents_t<ptrsize>& getCIE() ;
 
-	const lsda_t<ptrsize>& GetLSDA() const { return lsda; }
+	const eh_program_t<ptrsize>& getProgram() const ;
+	eh_program_t<ptrsize>& getProgram() ;
+
+	shared_ptr<LSDA_t> getLSDA() const { assert(0); }
+	const lsda_t<ptrsize>& getLSDAInternal() const { return lsda; }
 
 	bool parse_fde(
 		const uint32_t &fde_position, 
@@ -343,8 +351,7 @@ class fde_contents_t : eh_frame_util_t<ptrsize>
 		const uint8_t* const data, 
 		const uint64_t max, 
 		const uint64_t eh_addr,
-		const uint8_t *gcc_except_scoop_data
-		/* const libIRDB::DataScoop_t* gcc_except_scoop*/);
+		const ScoopReplacement_t *gcc_except_scoop);
 
 	void print() const;
 
@@ -352,30 +359,18 @@ class fde_contents_t : eh_frame_util_t<ptrsize>
 };
 
 template <int ptrsize>
-bool operator<(const fde_contents_t<ptrsize>& a, const fde_contents_t<ptrsize>& b) { return a.GetFDEEndAddress()-1 < b.GetFDEStartAddress(); }
+bool operator<(const fde_contents_t<ptrsize>& a, const fde_contents_t<ptrsize>& b) { return a.getFDEEndAddress()-1 < b.getFDEStartAddress(); }
 
-
-class split_eh_frame_t 
-{
-	public:
-
-		virtual bool parse()=0;
-		virtual void print() const=0;
-
-};
 
 template <int ptrsize>
-class split_eh_frame_impl_t : public split_eh_frame_t
+class split_eh_frame_impl_t : public EHFrameParser_t
 {
 	private: 
 
-/*
-	libIRDB::FileIR_t* firp;
-	libIRDB::DataScoop_t* eh_frame_scoop;
-	libIRDB::DataScoop_t* eh_frame_hdr_scoop;
-	libIRDB::DataScoop_t* gcc_except_table_scoop;
-	OffsetMap_t offset_to_insn_map;
-*/
+	unique_ptr<ScoopReplacement_t> eh_frame_scoop;
+	unique_ptr<ScoopReplacement_t> eh_frame_hdr_scoop;
+	unique_ptr<ScoopReplacement_t> gcc_except_table_scoop;
+
 	std::vector<cie_contents_t <ptrsize> > cies;
 	std::set<fde_contents_t <ptrsize> > fdes;
 
@@ -384,13 +379,24 @@ class split_eh_frame_impl_t : public split_eh_frame_t
 
 	public:
 
-/*
-	split_eh_frame_impl_t(libIRDB::FileIR_t* p_firp);
-*/
+	split_eh_frame_impl_t
+		(
+		const ScoopReplacement_t &eh_frame,
+		const ScoopReplacement_t &eh_frame_hdr,
+		const ScoopReplacement_t &gcc_except_table 
+		)
+		:
+			eh_frame_scoop(new ScoopReplacement_t(eh_frame)),
+			eh_frame_hdr_scoop(new ScoopReplacement_t(eh_frame_hdr)),
+			gcc_except_table_scoop(new ScoopReplacement_t(gcc_except_table))
+	{
+	}
 
 	bool parse();
-
 	void print() const;
+
+        virtual const shared_ptr<FDEVector_t> getFDEs() const;
+        virtual const shared_ptr<CIEVector_t> getCIEs() const;
 
 
 };
