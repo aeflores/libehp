@@ -1658,6 +1658,9 @@ unique_ptr<const EHFrameParser_t> EHFrameParser_t::factory(const string filename
 	auto get_info=[&](const string name) -> pair<string,uint64_t>
 		{
 			const auto &sec=elfiop->sections[name.c_str()];
+			if(sec==nullptr)
+				return {"",0};
+
 			auto contents=string(sec->get_data(), sec->get_size());
 			auto addr=sec->get_address();
 			return {contents,addr};	
