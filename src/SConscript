@@ -9,8 +9,8 @@ files="ehp.cpp"
 
 cpppath='''
 	../include
-	../third-party/elfio-code
-        '''
+	'''
+cpppath=cpppath+Dir('.').srcnode().abspath+'/../third-party/elfio-code'
 
 
 LIBPATH="$SECURITY_TRANSFORMS_HOME/lib"
