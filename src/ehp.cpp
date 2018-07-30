@@ -732,7 +732,7 @@ bool eh_program_insn_t<ptrsize>::isRememberState() const
 }
 
 template <int ptrsize>
-bool eh_program_insn_t<ptrsize>::Advance(uint64_t &cur_addr, uint64_t CAF) const 
+bool eh_program_insn_t<ptrsize>::advance(uint64_t &cur_addr, uint64_t CAF) const 
 { 
 	// make sure uint8_t is an unsigned char.	
 	static_assert(std::is_same<unsigned char, uint8_t>::value, "uint8_t is not unsigned char");
@@ -1614,6 +1614,27 @@ void split_eh_frame_impl_t<ptrsize>::print() const
 	{
 		p.print();
 	});
+}
+
+
+template <int ptrsize>
+shared_ptr<EHProgramInstructionVector_t> eh_program_t<ptrsize>::getInstructions() const 
+{
+	auto ret=shared_ptr<EHProgramInstructionVector_t>(new EHProgramInstructionVector_t());
+	transform(ALLOF(getInstructionsInternal()), back_inserter(*ret), 
+		[](const eh_program_insn_t<ptrsize> &a) { return shared_ptr<EHProgramInstruction_t>(new eh_program_insn_t<ptrsize>(a));});
+	return shared_ptr<EHProgramInstructionVector_t>(ret);
+	
+}
+
+
+template <int ptrsize>
+shared_ptr<TypeTableVector_t> lsda_t<ptrsize>::getTypeTable() const 
+{
+	auto ret=shared_ptr<TypeTableVector_t>(new TypeTableVector_t());
+	transform(ALLOF(type_table), back_inserter(*ret), 
+		[](const lsda_type_table_entry_t<ptrsize> &a) { return shared_ptr<LSDATypeTableEntry_t>(new lsda_type_table_entry_t<ptrsize>(a));});
+	return shared_ptr<TypeTableVector_t>(ret);
 }
 
 

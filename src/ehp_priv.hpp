@@ -97,7 +97,7 @@ class eh_program_insn_t  : public EHProgramInstruction_t
 	bool isRestoreState() const ;
 	bool isRememberState() const ;
 
-	bool Advance(uint64_t &cur_addr, uint64_t CAF) const ;
+	bool advance(uint64_t &cur_addr, uint64_t CAF) const ;
 
 	const std::vector<uint8_t>& getBytes() const ;
 	std::vector<uint8_t>& getBytes() ;
@@ -122,7 +122,7 @@ class eh_program_t : public EHProgram_t
 		const uint32_t& program_start_position, 
 		const uint8_t* const data, 
 		const uint32_t &max_program_pos);
-        virtual shared_ptr<EHProgramInstructionVector_t> getInstructions() const { assert(0); }
+        virtual shared_ptr<EHProgramInstructionVector_t> getInstructions() const ;
 	std::vector<eh_program_insn_t <ptrsize> >& getInstructionsInternal() ;
 	const std::vector<eh_program_insn_t <ptrsize> >& getInstructionsInternal() const ;
 
@@ -266,6 +266,7 @@ class lsda_call_site_t : public LSDACallSite_t, private eh_frame_util_t<ptrsize>
 
 // short hand for a vector of call sites
 template <int ptrsize>  using call_site_table_t = std::vector<lsda_call_site_t <ptrsize> > ;
+template <int ptrsize>  using lsda_type_table_t = std::vector<lsda_type_table_entry_t <ptrsize> > ;
 
 template <int ptrsize>
 class lsda_t : public LSDA_t, private eh_frame_util_t<ptrsize>
@@ -282,8 +283,8 @@ class lsda_t : public LSDA_t, private eh_frame_util_t<ptrsize>
 	uint64_t cs_table_length;
 	uint64_t cs_table_end_addr;
 	uint64_t action_table_start_addr;
-	call_site_table_t <ptrsize>  call_site_table;
-	std::vector<lsda_type_table_entry_t <ptrsize> > type_table;
+	call_site_table_t<ptrsize>  call_site_table;
+	lsda_type_table_t<ptrsize> type_table;
 
 	public:
 
@@ -299,6 +300,8 @@ class lsda_t : public LSDA_t, private eh_frame_util_t<ptrsize>
 
         shared_ptr<CallSiteVector_t> getCallSites() const ;
         const call_site_table_t<ptrsize> getCallSitesInternal() const { return call_site_table;}
+
+        shared_ptr<TypeTableVector_t> getTypeTable() const ;
 
 };
 
@@ -345,6 +348,8 @@ class fde_contents_t : public FDEContents_t, eh_frame_util_t<ptrsize>
 
 	shared_ptr<LSDA_t> getLSDA() const { return shared_ptr<LSDA_t>(new lsda_t<ptrsize>(lsda)) ;  }
 	const lsda_t<ptrsize>& getLSDAInternal() const { return lsda; }
+
+        uint64_t getLSDAAddress() const { return lsda_addr; }  
 
 	bool parse_fde(
 		const uint32_t &fde_position, 

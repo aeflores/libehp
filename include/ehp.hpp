@@ -26,6 +26,8 @@ class EHProgramInstruction_t
 	virtual bool isRestoreState() const =0;
 	virtual bool isRememberState() const =0;
 	virtual const EHProgramInstructionByteVector_t& getBytes() const =0;
+        virtual bool advance(uint64_t &cur_addr, uint64_t CAF) const =0;
+
 };
 
 using EHProgramInstructionVector_t = vector<shared_ptr<EHProgramInstruction_t> >;
@@ -98,7 +100,9 @@ class LSDACallSite_t
 	virtual void print() const=0;
 };
 
-using CallSiteVector_t = vector<shared_ptr<LSDACallSite_t> > ;
+using CallSiteVector_t  = vector<shared_ptr<LSDACallSite_t> >;
+using TypeTableVector_t = vector<shared_ptr<LSDATypeTableEntry_t> >;
+
 class LSDA_t 
 {
 	protected:
@@ -109,6 +113,7 @@ class LSDA_t
 	virtual uint8_t getTTEncoding() const =0;
 	virtual void print() const=0;
         virtual shared_ptr<CallSiteVector_t> getCallSites() const =0;
+        virtual shared_ptr<TypeTableVector_t> getTypeTable() const =0;
 };
 
 class FDEContents_t 
@@ -123,6 +128,7 @@ class FDEContents_t
 	virtual const CIEContents_t& getCIE() const =0;
 	virtual const EHProgram_t& getProgram() const =0;
 	virtual shared_ptr<LSDA_t> getLSDA() const =0;
+	virtual uint64_t getLSDAAddress() const =0;
 	virtual void print() const=0;	// move to ostream?  toString?
 
 };
