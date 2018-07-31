@@ -147,6 +147,7 @@ class EHFrameParser_t
 	virtual void print() const=0;
 	virtual const shared_ptr<FDEVector_t> getFDEs() const =0;
 	virtual const shared_ptr<CIEVector_t> getCIEs() const =0;
+	virtual const shared_ptr<FDEContents_t> findFDE(uint64_t addr) const =0; 
 
 	static unique_ptr<const EHFrameParser_t> factory(const string filename);
 	static unique_ptr<const EHFrameParser_t> factory(

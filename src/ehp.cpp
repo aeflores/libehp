@@ -1675,8 +1675,16 @@ const shared_ptr<CIEVector_t>  split_eh_frame_impl_t<ptrsize>::getCIEs() const
 		[](const cie_contents_t<ptrsize> &a){ return shared_ptr<CIEContents_t>(new cie_contents_t<ptrsize>(a));});
 	return ret;
 }
-	
 
+template <int ptrsize>
+const shared_ptr<FDEContents_t> split_eh_frame_impl_t<ptrsize>::findFDE(uint64_t addr) const
+{
+
+        const auto tofind=fde_contents_t<ptrsize>( addr, addr+1);
+        const auto fde_it=fdes.find(tofind);
+	const auto raw_ret_ptr = (fde_it==fdes.end()) ?  nullptr : new fde_contents_t<ptrsize>(*fde_it);
+	return shared_ptr<FDEContents_t>(raw_ret_ptr);
+}
 
 unique_ptr<const EHFrameParser_t> EHFrameParser_t::factory(const string filename)
 {

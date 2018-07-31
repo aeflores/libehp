@@ -403,6 +403,8 @@ class split_eh_frame_impl_t : public EHFrameParser_t
 
         virtual const shared_ptr<FDEVector_t> getFDEs() const;
         virtual const shared_ptr<CIEVector_t> getCIEs() const;
+        virtual const shared_ptr<FDEContents_t> findFDE(uint64_t addr) const; 
+
 
 
 };
