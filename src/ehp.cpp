@@ -1154,6 +1154,16 @@ lsda_call_site_t<ptrsize>::lsda_call_site_t() :
 	action_table_addr(0)
 {}
 
+template <int ptrsize>
+shared_ptr<LSDACallSiteActionVector_t> lsda_call_site_t<ptrsize>::getActionTable() const       
+{ 
+	auto ret=shared_ptr<LSDACallSiteActionVector_t>(new LSDACallSiteActionVector_t());
+	transform(ALLOF(action_table), back_inserter(*ret), 
+		[](const lsda_call_site_action_t<ptrsize> &a) { return shared_ptr<LSDACallSiteAction_t>(new lsda_call_site_action_t<ptrsize>(a));});
+	return shared_ptr<LSDACallSiteActionVector_t>(ret);
+}
+
+
 
 
 template <int ptrsize>

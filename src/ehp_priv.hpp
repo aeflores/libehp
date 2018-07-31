@@ -238,7 +238,7 @@ class lsda_call_site_t : public LSDACallSite_t, private eh_frame_util_t<ptrsize>
 	public:
 	lsda_call_site_t() ;
 
-	shared_ptr<LSDCallSiteActionVector_t> getActionTable() const       { assert(0); }
+	shared_ptr<LSDACallSiteActionVector_t> getActionTable() const;
 	const std::vector<lsda_call_site_action_t <ptrsize> >& getActionTableInternal() const { return action_table; }
 	      std::vector<lsda_call_site_action_t <ptrsize> >& getActionTableInternal()       { return action_table; }
 

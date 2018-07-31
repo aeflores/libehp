@@ -85,7 +85,7 @@ class LSDATypeTableEntry_t
 	
 };
 
-using LSDCallSiteActionVector_t=vector<shared_ptr<LSDACallSiteAction_t> >;
+using LSDACallSiteActionVector_t=vector<shared_ptr<LSDACallSiteAction_t> >;
 class LSDACallSite_t 
 {
 	protected:
@@ -93,7 +93,7 @@ class LSDACallSite_t
 	LSDACallSite_t(const LSDACallSite_t&) {}
 	public:
 	virtual ~LSDACallSite_t() {}
-	virtual shared_ptr<LSDCallSiteActionVector_t> getActionTable() const =0;
+	virtual shared_ptr<LSDACallSiteActionVector_t> getActionTable() const =0;
 	virtual uint64_t getCallSiteAddress() const  =0;
 	virtual uint64_t getCallSiteEndAddress() const  =0;
 	virtual uint64_t getLandingPadAddress() const  =0;
