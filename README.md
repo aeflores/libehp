@@ -10,4 +10,4 @@ Notes:
 1. Additional documentation will be provided in later versions 
 1. API is incomplete and untested in some areas.  Future versions will improve stability.
 1. Use git clone --recursive to pull down required submodules
-1. Build with 'scons'
+1. Build with 'scons', add 'debug=1' for debug build
