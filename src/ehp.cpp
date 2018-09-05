@@ -1558,7 +1558,8 @@ void fde_contents_t<ptrsize>::print() const
 template <int ptrsize>
 bool split_eh_frame_impl_t<ptrsize>::iterate_fdes()
 {
-	auto eh_frame_scoop_data=(const uint8_t* const)eh_frame_scoop->getContents().c_str();
+	auto eh_frame_scoop_str=eh_frame_scoop->getContents();
+	auto eh_frame_scoop_data=(const uint8_t* const)eh_frame_scoop_str.c_str();
 	auto data=eh_frame_scoop_data;
 	auto eh_addr= eh_frame_scoop->getStart();
 	auto max=eh_frame_scoop->getContents().size();
