@@ -1373,7 +1373,7 @@ bool lsda_t<ptrsize>::parse_lsda(
 					lsda_type_table_entry_t <ptrsize> ltte;
 					if(ltte.parse(type_table_encoding, type_table_pos, index, (const uint8_t* const)data.data(), max, data_addr ))
 						return true;
-					type_table.resize(std::max(index,type_table.size()));
+					type_table.resize(std::max((size_t)index,(size_t)type_table.size()));
 					type_table.at(index-1)=ltte;
 					return false;
 				};
