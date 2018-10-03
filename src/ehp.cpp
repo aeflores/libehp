@@ -1516,8 +1516,9 @@ bool fde_contents_t<ptrsize>::parse_fde(
 	{
 		if(this->read_type_with_encoding(c.getCIE().getLSDAEncoding(), lsda_addr, pos, eh_frame_scoop_data, max, eh_addr))
 			return true;
-		if(c.lsda.parse_lsda(lsda_addr,gcc_except_scoop, fde_start_addr))
-			return true;
+		if(lsda_addr!=0)
+			if(c.lsda.parse_lsda(lsda_addr,gcc_except_scoop, fde_start_addr))
+				return true;
 	}
 
 	if(c.eh_pgm.parse_program(pos, eh_frame_scoop_data, end_pos))
@@ -1547,7 +1548,7 @@ void fde_contents_t<ptrsize>::print() const
 	cout<<"		FDE len:		"<<dec<<fde_range_len<<endl;
 	cout<<"		FDE LSDA:		"<<hex<<lsda_addr<<endl;
 	eh_pgm.print(fde_start_addr);
-	if(getCIE().getLSDAEncoding()!= DW_EH_PE_omit)
+	if(getCIE().getLSDAEncoding()!= DW_EH_PE_omit && lsda_addr!=0 /* indicator of nullptr for lsda */)
 		lsda.print();
 	else
 		cout<<"		No LSDA for this FDE."<<endl;
