@@ -287,7 +287,7 @@ void eh_program_insn_t<ptrsize>::print(uint64_t &pc, int64_t caf) const
 	// make sure uint8_t is an unsigned char.	
 	static_assert(std::is_same<unsigned char, uint8_t>::value, "uint8_t is not unsigned char");
 
-	auto data=program_bytes;
+	auto &data=program_bytes;
 	auto opcode=program_bytes[0];
 	auto opcode_upper2=(uint8_t)(opcode >> 6);
 	auto opcode_lower6=(uint8_t)(opcode & (0x3f));
@@ -753,7 +753,7 @@ bool eh_program_insn_t<ptrsize>::advance(uint64_t &cur_addr, uint64_t CAF) const
 	// make sure uint8_t is an unsigned char.	
 	static_assert(std::is_same<unsigned char, uint8_t>::value, "uint8_t is not unsigned char");
 
-	auto data=program_bytes;
+	auto &data=program_bytes;
 	auto opcode=program_bytes[0];
 	auto opcode_upper2=(uint8_t)(opcode >> 6);
 	auto opcode_lower6=(uint8_t)(opcode & (0x3f));
