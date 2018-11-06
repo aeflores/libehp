@@ -1,6 +1,7 @@
 .sconsign.dblite
 src/.sconsign.dblite
 lib/libehp.a
+lib/libehp.so
 src/libehp.a
 src/.*.swp
 src/*.o
