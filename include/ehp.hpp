@@ -55,7 +55,7 @@ class EHProgram_t
 	EHProgram_t(const EHProgram_t&) {}
 	public:
 	virtual ~EHProgram_t() {}
-	virtual void print(const uint64_t start_addr=0) const=0;
+	virtual void print(const uint64_t start_addr, const int64_t caf) const=0;
 	virtual shared_ptr<EHProgramInstructionVector_t> getInstructions() const =0;
 };
 
@@ -74,7 +74,7 @@ class CIEContents_t
 	virtual string getAugmentation() const =0;
 	virtual uint8_t getLSDAEncoding() const =0;
 	virtual uint8_t getFDEEncoding() const =0;
-	virtual void print() const =0;
+	virtual void print(const uint64_t startAddr) const =0;
 };
 
 class LSDACallSiteAction_t 

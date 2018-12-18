@@ -824,14 +824,14 @@ template <int ptrsize>
 void eh_program_t<ptrsize>::push_insn(const eh_program_insn_t<ptrsize> &i) { instructions.push_back(i); }
 
 template <int ptrsize>
-void eh_program_t<ptrsize>::print(const uint64_t start_addr) const
+void eh_program_t<ptrsize>::print(const uint64_t start_addr, const int64_t caf) const
 {
 	auto pc=start_addr;
 	cout << "			Program:                  " << endl ;
-	for_each(instructions.begin(), instructions.end(), [&](const eh_program_insn_t<ptrsize>& i)
+	for (const auto &i : instructions) 
 	{ 
-		i.print(pc);
-	});
+		i.print(pc,caf);
+	}
 }
 
 template <int ptrsize>
@@ -1034,7 +1034,7 @@ bool cie_contents_t<ptrsize>::parse_cie(
 }
 
 template <int ptrsize>
-void cie_contents_t<ptrsize>::print() const 
+void cie_contents_t<ptrsize>::print(const uint64_t startAddr) const 
 {
 	cout << "["<<setw(6)<<hex<<cie_position<<"] CIE length="<<dec<<length<<endl;
 	cout << "   CIE_id:                   " << +cie_id << endl;
@@ -1050,7 +1050,7 @@ void cie_contents_t<ptrsize>::print() const
 	cout << "                             lsda_encoding:        " << hex << +lsda_encoding << endl;
 	cout << "                             fde_encoding:         " << hex << +fde_encoding << endl;
 	cout << "   Program:        " << endl ;
-	eh_pgm.print();
+	eh_pgm.print(startAddr,getCAF());
 	
 }
 
@@ -1539,6 +1539,7 @@ bool fde_contents_t<ptrsize>::parse_fde(
 template <int ptrsize>
 void fde_contents_t<ptrsize>::print() const
 {
+	const auto caf=cie_info.getCAF();
 
 	cout << "["<<setw(6)<<hex<<fde_position<<"] FDE length="<<dec<<length;
 	cout <<" cie=["<<setw(6)<<hex<<cie_position<<"]"<<endl;
@@ -1547,7 +1548,7 @@ void fde_contents_t<ptrsize>::print() const
 	cout<<"		FDE End addr:		"<<hex<<fde_end_addr<<endl;
 	cout<<"		FDE len:		"<<dec<<fde_range_len<<endl;
 	cout<<"		FDE LSDA:		"<<hex<<lsda_addr<<endl;
-	eh_pgm.print(fde_start_addr);
+	eh_pgm.print(fde_start_addr, caf);
 	if(getCIE().getLSDAEncoding()!= DW_EH_PE_omit && lsda_addr!=0 /* indicator of nullptr for lsda */)
 		lsda.print();
 	else
@@ -1576,6 +1577,11 @@ bool split_eh_frame_impl_t<ptrsize>::iterate_fdes()
 		auto act_length=uint64_t(0);
 
 		if(eh_frame_util_t<ptrsize>::read_length(act_length, position, eh_frame_scoop_data, max))
+			break;
+
+		// length field has to be meaningful, 0 or -1 indicates end of segment
+		// the exact end-of-segment marker varies platform to platform.
+		if(act_length==0 || act_length==0xffffffff || act_length == decltype(act_length)(-1))
 			break;
 
 		auto next_position=position + act_length;
@@ -1639,7 +1645,7 @@ void split_eh_frame_impl_t<ptrsize>::print() const
 {
 	for_each(cies.begin(), cies.end(), [&](const cie_contents_t<ptrsize>  &p)
 	{
-		p.print();
+		p.print(0 /* cie has no start address on its own */);
 	});
 	for_each(fdes.begin(), fdes.end(), [&](const fde_contents_t<ptrsize>  &p)
 	{
