@@ -88,7 +88,7 @@ class eh_program_insn_t  : public EHProgramInstruction_t
 	eh_program_insn_t() ;
 	eh_program_insn_t(const std::string &s) ;
 
-	void print(uint64_t &pc, int64_t caf=1) const;
+	void print(uint64_t &pc, int64_t caf) const;
 
 	void push_byte(uint8_t c) ;
 
@@ -131,7 +131,7 @@ class eh_program_t : public EHProgram_t
 	public:
 	void push_insn(const eh_program_insn_t<ptrsize> &i); 
 
-	void print(const uint64_t start_addr=0) const;
+	void print(const uint64_t start_addr, const int64_t caf) const;
 
 	bool parse_program(
 		const uint32_t& program_start_position, 
@@ -186,7 +186,7 @@ class cie_contents_t : public CIEContents_t, private eh_frame_util_t<ptrsize>
 		const uint8_t* const data, 
 		const uint32_t max, 
 		const uint64_t eh_addr);
-	void print() const ;
+	void print(const uint64_t startAddr) const ;
 };
 
 template <int ptrsize>
