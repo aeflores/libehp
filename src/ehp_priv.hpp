@@ -274,7 +274,6 @@ class lsda_call_site_t : public LSDACallSite_t, private eh_frame_util_t<ptrsize>
 
 	void print() const;
 
-//	bool appliesTo(const libIRDB::Instruction_t* insn) const;
 
 };
 
@@ -347,7 +346,6 @@ class fde_contents_t : public FDEContents_t, eh_frame_util_t<ptrsize>
 		fde_end_addr(end_addr)
 	{} 
 
-//	bool appliesTo(const libIRDB::Instruction_t* insn) const;
 
 	uint64_t getStartAddress() const { return fde_start_addr; } 
 	uint64_t getEndAddress() const {return fde_end_addr; }
