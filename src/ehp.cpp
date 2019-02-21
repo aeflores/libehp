@@ -692,20 +692,19 @@ bool eh_program_insn_t<ptrsize>::isNop() const
 	const auto opcode=program_bytes[0];
 	const auto opcode_upper2=(uint8_t)(opcode >> 6);
 	const auto opcode_lower6=(uint8_t)(opcode & (0x3f));
-	switch(opcode_upper2)
-	{
-		case 0:
-		{
-			switch(opcode_lower6)
-			{
-			
-				case DW_CFA_nop:
-					return true;
-			}
-		}
-	}
-	return false;
+	return opcode_upper2==0 && opcode_lower6==DW_CFA_nop;
 }
+
+template <int ptrsize>
+bool eh_program_insn_t<ptrsize>::isDefCFAOffset() const 
+{
+	const auto opcode=program_bytes[0];
+	const auto opcode_upper2=(uint8_t)(opcode >> 6);
+	const auto opcode_lower6=(uint8_t)(opcode & (0x3f));
+
+	return opcode_upper2==0 && opcode_lower6==DW_CFA_def_cfa_offset;
+}
+
 
 template <int ptrsize>
 bool eh_program_insn_t<ptrsize>::isRestoreState() const 
@@ -1704,13 +1703,13 @@ const shared_ptr<CIEVector_t>  split_eh_frame_impl_t<ptrsize>::getCIEs() const
 }
 
 template <int ptrsize>
-const shared_ptr<FDEContents_t> split_eh_frame_impl_t<ptrsize>::findFDE(uint64_t addr) const
+const FDEContents_t* split_eh_frame_impl_t<ptrsize>::findFDE(uint64_t addr) const
 {
 
         const auto tofind=fde_contents_t<ptrsize>( addr, addr+1);
         const auto fde_it=fdes.find(tofind);
-	const auto raw_ret_ptr = (fde_it==fdes.end()) ?  nullptr : new fde_contents_t<ptrsize>(*fde_it);
-	return shared_ptr<FDEContents_t>(raw_ret_ptr);
+	const auto raw_ret_ptr = (fde_it==fdes.end()) ?  nullptr : &*fde_it;
+	return raw_ret_ptr;
 }
 
 unique_ptr<const EHFrameParser_t> EHFrameParser_t::factory(const string filename)

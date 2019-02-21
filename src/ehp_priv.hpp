@@ -109,6 +109,7 @@ class eh_program_insn_t  : public EHProgramInstruction_t
 		const uint32_t &max);
 
 	bool isNop() const ;
+	bool isDefCFAOffset() const ;
 	bool isRestoreState() const ;
 	bool isRememberState() const ;
 
@@ -416,7 +417,7 @@ class split_eh_frame_impl_t : public EHFrameParser_t
 
         virtual const shared_ptr<FDEVector_t> getFDEs() const;
         virtual const shared_ptr<CIEVector_t> getCIEs() const;
-        virtual const shared_ptr<FDEContents_t> findFDE(uint64_t addr) const; 
+        virtual const FDEContents_t* findFDE(uint64_t addr) const; 
 
 
 

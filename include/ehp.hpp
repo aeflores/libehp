@@ -40,6 +40,7 @@ class EHProgramInstruction_t
 	virtual ~EHProgramInstruction_t() {}
 	virtual void print(uint64_t &pc, int64_t caf=1) const=0;
 	virtual bool isNop() const =0;
+	virtual bool isDefCFAOffset() const =0;
 	virtual bool isRestoreState() const =0;
 	virtual bool isRememberState() const =0;
 	virtual const EHProgramInstructionByteVector_t& getBytes() const =0;
@@ -164,7 +165,7 @@ class EHFrameParser_t
 	virtual void print() const=0;
 	virtual const shared_ptr<FDEVector_t> getFDEs() const =0;
 	virtual const shared_ptr<CIEVector_t> getCIEs() const =0;
-	virtual const shared_ptr<FDEContents_t> findFDE(uint64_t addr) const =0; 
+	virtual const FDEContents_t* findFDE(uint64_t addr) const =0; 
 
 	static unique_ptr<const EHFrameParser_t> factory(const string filename);
 	static unique_ptr<const EHFrameParser_t> factory(
