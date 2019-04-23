@@ -53,7 +53,7 @@ class eh_frame_util_t
 		const uint64_t section_start_addr );
 
 	static bool read_string 
-		(std::string &s, 
+		(string &s, 
 		uint32_t & position, 
 		const uint8_t* const data, 
 		const uint32_t max);
@@ -86,7 +86,7 @@ class eh_program_insn_t  : public EHProgramInstruction_t
 	public: 
 	
 	eh_program_insn_t() ;
-	eh_program_insn_t(const std::string &s) ;
+	eh_program_insn_t(const string &s) ;
 
 	void print(uint64_t &pc, int64_t caf) const;
 
@@ -115,12 +115,12 @@ class eh_program_insn_t  : public EHProgramInstruction_t
 
 	bool advance(uint64_t &cur_addr, uint64_t CAF) const ;
 
-	const std::vector<uint8_t>& getBytes() const ;
-	std::vector<uint8_t>& getBytes() ;
+	const vector<uint8_t>& getBytes() const ;
+	vector<uint8_t>& getBytes() ;
 
 	private:
 
-	std::vector<uint8_t> program_bytes;
+	vector<uint8_t> program_bytes;
 };
 
 template <int ptrsize>
@@ -138,12 +138,13 @@ class eh_program_t : public EHProgram_t
 		const uint32_t& program_start_position, 
 		const uint8_t* const data, 
 		const uint32_t &max_program_pos);
-        virtual shared_ptr<EHProgramInstructionVector_t> getInstructions() const ;
-	std::vector<eh_program_insn_t <ptrsize> >& getInstructionsInternal() ;
-	const std::vector<eh_program_insn_t <ptrsize> >& getInstructionsInternal() const ;
+        virtual const EHProgramInstructionVector_t* getInstructions() const ;
+	vector<eh_program_insn_t <ptrsize> >& getInstructionsInternal() ;
+	const vector<eh_program_insn_t <ptrsize> >& getInstructionsInternal() const ;
 
 	private:
-	std::vector<eh_program_insn_t <ptrsize> > instructions;
+	vector<eh_program_insn_t <ptrsize> > instructions;
+	mutable EHProgramInstructionVector_t instructions_cache;
 };
 
 template <int ptrsize>
@@ -157,7 +158,7 @@ class cie_contents_t : public CIEContents_t, private eh_frame_util_t<ptrsize>
 	uint64_t length;
 	uint8_t cie_id;
 	uint8_t cie_version;
-	std::string augmentation;
+	string augmentation;
 	uint64_t code_alignment_factor;
 	int64_t data_alignment_factor;
 	uint64_t return_address_register_column;
@@ -178,7 +179,7 @@ class cie_contents_t : public CIEContents_t, private eh_frame_util_t<ptrsize>
 	uint64_t getPersonality() const ;
 	uint64_t getReturnRegister() const ;
 
-	std::string getAugmentation() const ;
+	string getAugmentation() const ;
 	uint8_t getLSDAEncoding() const ;
 	uint8_t getFDEEncoding() const ;
 
@@ -249,14 +250,15 @@ class lsda_call_site_t : public LSDACallSite_t, private eh_frame_util_t<ptrsize>
 	uint64_t action_table_offset;
 	uint64_t action_table_addr;
 
-	std::vector<lsda_call_site_action_t <ptrsize> > action_table;
+	vector<lsda_call_site_action_t <ptrsize> > action_table;
+	mutable LSDACallSiteActionVector_t action_table_cache;
 
 	public:
 	lsda_call_site_t() ;
 
-	shared_ptr<LSDACallSiteActionVector_t> getActionTable() const;
-	const std::vector<lsda_call_site_action_t <ptrsize> >& getActionTableInternal() const { return action_table; }
-	      std::vector<lsda_call_site_action_t <ptrsize> >& getActionTableInternal()       { return action_table; }
+	const LSDACallSiteActionVector_t* getActionTable() const;
+	const vector<lsda_call_site_action_t <ptrsize> >& getActionTableInternal() const { return action_table; }
+	      vector<lsda_call_site_action_t <ptrsize> >& getActionTableInternal()       { return action_table; }
 
 	uint64_t getCallSiteAddress() const  { return call_site_addr ; } 
 	uint64_t getCallSiteEndAddress() const  { return call_site_end_addr ; } 
@@ -280,8 +282,8 @@ class lsda_call_site_t : public LSDACallSite_t, private eh_frame_util_t<ptrsize>
 
 
 // short hand for a vector of call sites
-template <int ptrsize>  using call_site_table_t = std::vector<lsda_call_site_t <ptrsize> > ;
-template <int ptrsize>  using lsda_type_table_t = std::vector<lsda_type_table_entry_t <ptrsize> > ;
+template <int ptrsize>  using call_site_table_t = vector<lsda_call_site_t <ptrsize> > ;
+template <int ptrsize>  using lsda_type_table_t = vector<lsda_type_table_entry_t <ptrsize> > ;
 
 template <int ptrsize>
 class lsda_t : public LSDA_t, private eh_frame_util_t<ptrsize>
@@ -298,25 +300,33 @@ class lsda_t : public LSDA_t, private eh_frame_util_t<ptrsize>
 	uint64_t cs_table_length;
 	uint64_t cs_table_end_addr;
 	uint64_t action_table_start_addr;
+
 	call_site_table_t<ptrsize>  call_site_table;
+	// this is a vector of pointers into the call site table.
+	// and is the thing we return when getCallSites is called.
+	// this is marked as mutable so we can cache it between calls.
+	mutable CallSiteVector_t call_site_table_cache ;
+
 	lsda_type_table_t<ptrsize> type_table;
+
+	// this is a vector of pointers into the type_table
+	// and is the thing we return when getTypeTable is called.
+	// this is marked as mutable so we can cache it between calls.
+	mutable TypeTableVector_t type_table_cache ;
 
 	public:
 
-	uint8_t getTTEncoding() const ;
-	
-	lsda_t() ;
+	lsda_t();
 
+	uint8_t getTTEncoding() const ;
 	bool parse_lsda(const uint64_t lsda_addr, 
 			const ScoopReplacement_t* gcc_except_scoop_data,
 	                const uint64_t fde_region_start
 	                );
 	void print() const;
-
-        shared_ptr<CallSiteVector_t> getCallSites() const ;
+        const CallSiteVector_t* getCallSites() const ;
         const call_site_table_t<ptrsize> getCallSitesInternal() const { return call_site_table;}
-
-        shared_ptr<TypeTableVector_t> getTypeTable() const ;
+        const TypeTableVector_t* getTypeTable() const ;
 
 };
 
@@ -360,7 +370,7 @@ class fde_contents_t : public FDEContents_t, eh_frame_util_t<ptrsize>
 	const eh_program_t<ptrsize>& getProgram() const ;
 	eh_program_t<ptrsize>& getProgram() ;
 
-	shared_ptr<LSDA_t> getLSDA() const { return shared_ptr<LSDA_t>(new lsda_t<ptrsize>(lsda)) ;  }
+	const LSDA_t* getLSDA() const { return &lsda; } // shared_ptr<LSDA_t>(new lsda_t<ptrsize>(lsda)) ;  }
 	const lsda_t<ptrsize>& getLSDAInternal() const { return lsda; }
 
         uint64_t getLSDAAddress() const { return lsda_addr; }  
@@ -391,8 +401,11 @@ class split_eh_frame_impl_t : public EHFrameParser_t
 	unique_ptr<ScoopReplacement_t> eh_frame_hdr_scoop;
 	unique_ptr<ScoopReplacement_t> gcc_except_table_scoop;
 
-	std::vector<cie_contents_t <ptrsize> > cies;
-	std::set<fde_contents_t <ptrsize> > fdes;
+	vector<cie_contents_t <ptrsize> > cies;
+	mutable CIEVector_t cies_cache;
+
+	set<fde_contents_t <ptrsize> > fdes;
+	mutable FDEVector_t fdes_cache;
 
 
 	bool iterate_fdes();
@@ -415,8 +428,8 @@ class split_eh_frame_impl_t : public EHFrameParser_t
 	bool parse();
 	void print() const;
 
-        virtual const shared_ptr<FDEVector_t> getFDEs() const;
-        virtual const shared_ptr<CIEVector_t> getCIEs() const;
+        virtual const FDEVector_t* getFDEs() const;
+        virtual const CIEVector_t* getCIEs() const;
         virtual const FDEContents_t* findFDE(uint64_t addr) const; 
 
 

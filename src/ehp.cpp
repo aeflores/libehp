@@ -1173,12 +1173,19 @@ lsda_call_site_t<ptrsize>::lsda_call_site_t() :
 {}
 
 template <int ptrsize>
-shared_ptr<LSDACallSiteActionVector_t> lsda_call_site_t<ptrsize>::getActionTable() const       
+const LSDACallSiteActionVector_t* lsda_call_site_t<ptrsize>::getActionTable() const       
 { 
+	if(action_table_cache.size() == 0)
+	{
+		transform(ALLOF(action_table), back_inserter(action_table_cache), [](const lsda_call_site_action_t<ptrsize> &a) { return &a;});
+	}
+	return &action_table_cache;
+#if 0
 	auto ret=shared_ptr<LSDACallSiteActionVector_t>(new LSDACallSiteActionVector_t());
 	transform(ALLOF(action_table), back_inserter(*ret), 
 		[](const lsda_call_site_action_t<ptrsize> &a) { return shared_ptr<LSDACallSiteAction_t>(new lsda_call_site_action_t<ptrsize>(a));});
 	return shared_ptr<LSDACallSiteActionVector_t>(ret);
+#endif
 }
 
 
@@ -1654,52 +1661,86 @@ void split_eh_frame_impl_t<ptrsize>::print() const
 
 
 template <int ptrsize>
-shared_ptr<EHProgramInstructionVector_t> eh_program_t<ptrsize>::getInstructions() const 
+const EHProgramInstructionVector_t* eh_program_t<ptrsize>::getInstructions() const 
 {
+	if(instructions_cache.size()==0)
+	{
+		transform(ALLOF(instructions), back_inserter(instructions_cache), [](const eh_program_insn_t<ptrsize> &a) { return &a;});
+	}
+	return &instructions_cache;
+#if 0
 	auto ret=shared_ptr<EHProgramInstructionVector_t>(new EHProgramInstructionVector_t());
 	transform(ALLOF(getInstructionsInternal()), back_inserter(*ret), 
 		[](const eh_program_insn_t<ptrsize> &a) { return shared_ptr<EHProgramInstruction_t>(new eh_program_insn_t<ptrsize>(a));});
 	return shared_ptr<EHProgramInstructionVector_t>(ret);
+#endif
 	
 }
 
-
 template <int ptrsize>
-shared_ptr<TypeTableVector_t> lsda_t<ptrsize>::getTypeTable() const 
+const TypeTableVector_t* lsda_t<ptrsize>::getTypeTable() const 
 {
+	if(type_table_cache.size()==0)
+	{
+		transform(ALLOF(type_table), back_inserter(type_table_cache), [](const lsda_type_table_entry_t<ptrsize> &a) { return &a; });
+	}
+	return &type_table_cache;
+#if 0
 	auto ret=shared_ptr<TypeTableVector_t>(new TypeTableVector_t());
 	transform(ALLOF(type_table), back_inserter(*ret), 
 		[](const lsda_type_table_entry_t<ptrsize> &a) { return shared_ptr<LSDATypeTableEntry_t>(new lsda_type_table_entry_t<ptrsize>(a));});
 	return shared_ptr<TypeTableVector_t>(ret);
+#endif
 }
 
 
 template <int ptrsize>
-shared_ptr<CallSiteVector_t> lsda_t<ptrsize>::getCallSites() const 
+const CallSiteVector_t* lsda_t<ptrsize>::getCallSites() const 
 {
+	if(call_site_table_cache.size()==0)
+	{
+		transform(ALLOF(call_site_table), back_inserter(call_site_table_cache), [](const lsda_call_site_t<ptrsize> &a) { return &a;});
+	}
+	return &call_site_table_cache;
+#if 0
 	auto ret=shared_ptr<CallSiteVector_t>(new CallSiteVector_t());
 	transform(ALLOF(call_site_table), back_inserter(*ret), 
 		[](const lsda_call_site_t<ptrsize> &a) { return shared_ptr<LSDACallSite_t>(new lsda_call_site_t<ptrsize>(a));});
 	return shared_ptr<CallSiteVector_t>(ret);
+#endif
 }
 
 
 template <int ptrsize>
-const shared_ptr<FDEVector_t>  split_eh_frame_impl_t<ptrsize>::getFDEs() const
+const FDEVector_t*  split_eh_frame_impl_t<ptrsize>::getFDEs() const
 {
+	if(fdes_cache.size()==0)
+	{
+		transform(ALLOF(fdes), back_inserter(fdes_cache), [](const fde_contents_t<ptrsize> &a) { return &a; });
+	}
+	return &fdes_cache;
+#if 0
 	auto ret=shared_ptr<FDEVector_t>(new FDEVector_t());
 	transform(ALLOF(fdes), back_inserter(*ret), 
 		[](const fde_contents_t<ptrsize> &a) { return shared_ptr<FDEContents_t>(new fde_contents_t<ptrsize>(a));});
 	return shared_ptr<FDEVector_t>(ret);
+#endif
 }
 
 template <int ptrsize>
-const shared_ptr<CIEVector_t>  split_eh_frame_impl_t<ptrsize>::getCIEs() const
+const CIEVector_t*  split_eh_frame_impl_t<ptrsize>::getCIEs() const
 {
+	if(cies_cache.size()==0)
+	{
+		transform(ALLOF(cies), back_inserter(cies_cache), [](const cie_contents_t<ptrsize> &a) { return &a; });
+	}
+	return &cies_cache;
+#if 0
 	auto ret=shared_ptr<CIEVector_t>(new CIEVector_t());
 	transform(ALLOF(cies), back_inserter(*ret), 
 		[](const cie_contents_t<ptrsize> &a){ return shared_ptr<CIEContents_t>(new cie_contents_t<ptrsize>(a));});
 	return ret;
+#endif
 }
 
 template <int ptrsize>
