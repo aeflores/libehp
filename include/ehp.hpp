@@ -71,6 +71,7 @@ class CIEContents_t
 	virtual uint64_t getCAF() const =0;
 	virtual int64_t getDAF() const =0;
 	virtual uint64_t getPersonality() const =0;
+	virtual uint64_t getPersonalityPointerPosition() const = 0;
 	virtual uint64_t getReturnRegister() const =0;
 	virtual string getAugmentation() const =0;
 	virtual uint8_t getLSDAEncoding() const =0;

@@ -165,6 +165,7 @@ class cie_contents_t : public CIEContents_t, private eh_frame_util_t<ptrsize>
 	uint64_t augmentation_data_length;
 	uint8_t personality_encoding;
 	uint64_t personality;
+	uint64_t personality_pointer_position;
 	uint8_t lsda_encoding;
 	uint8_t fde_encoding;
 	eh_program_t<ptrsize> eh_pgm;
@@ -177,6 +178,7 @@ class cie_contents_t : public CIEContents_t, private eh_frame_util_t<ptrsize>
 	uint64_t getCAF() const ;
 	int64_t getDAF() const ;
 	uint64_t getPersonality() const ;
+	uint64_t getPersonalityPointerPosition() const { return personality_pointer_position; };
 	uint64_t getReturnRegister() const ;
 
 	string getAugmentation() const ;

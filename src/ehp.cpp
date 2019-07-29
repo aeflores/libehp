@@ -991,10 +991,12 @@ bool cie_contents_t<ptrsize>::parse_cie(
 	}
 	auto personality_encoding=uint8_t(DW_EH_PE_omit);
 	auto personality=uint64_t(0);
+	auto personality_pointer_position = uint64_t(0);
 	if(augmentation.find("P") != string::npos)
 	{
 		if(this->read_type(personality_encoding, position, eh_frame_scoop_data, max))
 			return true;
+		personality_pointer_position = position + eh_addr;
 
 		// indirect is OK as a personality encoding, but we don't need to go that far.
 		// we just need to record what's in the CIE, regardless of whether it's the actual
@@ -1030,6 +1032,7 @@ bool cie_contents_t<ptrsize>::parse_cie(
 	c.augmentation_data_length=augmentation_data_length;
 	c.personality_encoding=personality_encoding;
 	c.personality=personality;
+	c.personality_pointer_position = personality_pointer_position;
 	c.lsda_encoding=lsda_encoding;
 	c.fde_encoding=fde_encoding;
 
