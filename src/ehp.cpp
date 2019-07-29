@@ -29,12 +29,17 @@
 #include "ehp_priv.hpp"
 #include "scoop_replacement.hpp"
 
+#ifdef USE_ELFIO
 #include <elfio/elfio.hpp>
+#endif
 #include <elf.h>
 
 using namespace std;
 using namespace EHP;
+
+#ifdef USE_ELFIO
 using namespace ELFIO;
+#endif
 
 #define ALLOF(s) begin(s), end(s)
 
@@ -1753,6 +1758,7 @@ const FDEContents_t* split_eh_frame_impl_t<ptrsize>::findFDE(uint64_t addr) cons
 	return raw_ret_ptr;
 }
 
+#ifdef USE_ELFIO
 unique_ptr<const EHFrameParser_t> EHFrameParser_t::factory(const string filename)
 {
 	auto elfiop=unique_ptr<elfio>(new elfio);
@@ -1789,6 +1795,7 @@ unique_ptr<const EHFrameParser_t> EHFrameParser_t::factory(const string filename
 			gcc_except_table_section.first, gcc_except_table_section.second);
 
 }
+#endif
 
 unique_ptr<const EHFrameParser_t> EHFrameParser_t::factory(
 	uint8_t ptrsize,

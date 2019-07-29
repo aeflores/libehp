@@ -169,7 +169,9 @@ class EHFrameParser_t
 	virtual const CIEVector_t* getCIEs() const =0;
 	virtual const FDEContents_t* findFDE(uint64_t addr) const =0; 
 
+#ifdef USE_ELFIO
 	static unique_ptr<const EHFrameParser_t> factory(const string filename);
+#endif
 	static unique_ptr<const EHFrameParser_t> factory(
 		uint8_t ptrsize,
 		const string eh_frame_data, const uint64_t eh_frame_data_start_addr,
