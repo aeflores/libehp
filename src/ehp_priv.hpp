@@ -89,7 +89,7 @@ class eh_program_insn_t  : public EHProgramInstruction_t
 	eh_program_insn_t(const string &s) ;
 
 	void print(uint64_t &pc, int64_t caf) const;
-
+	uint64_t getSize() const { return program_bytes.size(); }
 	void push_byte(uint8_t c) ;
 
 	static void print_uleb_operand(
@@ -166,6 +166,7 @@ class cie_contents_t : public CIEContents_t, private eh_frame_util_t<ptrsize>
 	uint8_t personality_encoding;
 	uint64_t personality;
 	uint64_t personality_pointer_position;
+	uint64_t personality_pointer_size;
 	uint8_t lsda_encoding;
 	uint8_t fde_encoding;
 	eh_program_t<ptrsize> eh_pgm;
@@ -175,10 +176,14 @@ class cie_contents_t : public CIEContents_t, private eh_frame_util_t<ptrsize>
 	cie_contents_t() ;
 	
 	const eh_program_t<ptrsize>& getProgram() const ;
+	uint64_t getPosition() const { return cie_position; }
+	uint64_t getLength() const { return length; }
 	uint64_t getCAF() const ;
 	int64_t getDAF() const ;
+	uint8_t getPersonalityEncoding() const { return personality_encoding; }
 	uint64_t getPersonality() const ;
 	uint64_t getPersonalityPointerPosition() const { return personality_pointer_position; };
+	uint64_t getPersonalityPointerSize() const { return personality_pointer_size; };
 	uint64_t getReturnRegister() const ;
 
 	string getAugmentation() const ;
@@ -244,10 +249,14 @@ class lsda_call_site_t : public LSDACallSite_t, private eh_frame_util_t<ptrsize>
 	private:
 	uint64_t call_site_offset;
 	uint64_t call_site_addr;
+	uint64_t call_site_addr_position;
 	uint64_t call_site_length;
 	uint64_t call_site_end_addr;
+	uint64_t call_site_end_addr_position;
 	uint64_t landing_pad_offset;
 	uint64_t landing_pad_addr;
+	uint64_t landing_pad_addr_position;
+	uint64_t landing_pad_addr_end_position;
 	uint64_t action;
 	uint64_t action_table_offset;
 	uint64_t action_table_addr;
@@ -263,8 +272,12 @@ class lsda_call_site_t : public LSDACallSite_t, private eh_frame_util_t<ptrsize>
 	      vector<lsda_call_site_action_t <ptrsize> >& getActionTableInternal()       { return action_table; }
 
 	uint64_t getCallSiteAddress() const  { return call_site_addr ; } 
-	uint64_t getCallSiteEndAddress() const  { return call_site_end_addr ; } 
-	uint64_t getLandingPadAddress() const  { return landing_pad_addr ; } 
+	uint64_t getCallSiteAddressPosition() const { return call_site_addr_position; }
+	uint64_t getCallSiteEndAddress() const  { return call_site_end_addr ; }
+	uint64_t getCallSiteEndAddressPosition() const { return call_site_end_addr_position; }
+	uint64_t getLandingPadAddress() const  { return landing_pad_addr ; }
+	uint64_t getLandingPadAddressPosition() const { return landing_pad_addr_position; }
+	uint64_t getLandingPadAddressEndPosition() const { return landing_pad_addr_end_position; }
 
 	bool parse_lcs(	
 		const uint64_t action_table_start_addr, 	
@@ -326,9 +339,13 @@ class lsda_t : public LSDA_t, private eh_frame_util_t<ptrsize>
 	                const uint64_t fde_region_start
 	                );
 	void print() const;
-        const CallSiteVector_t* getCallSites() const ;
-        const call_site_table_t<ptrsize> getCallSitesInternal() const { return call_site_table;}
-        const TypeTableVector_t* getTypeTable() const ;
+	uint64_t getLandingPadBaseAddress() const {  return landing_pad_base_addr; }
+	const CallSiteVector_t* getCallSites() const ;
+	uint8_t getCallSiteTableEncoding() const { return cs_table_encoding; }
+	const call_site_table_t<ptrsize> getCallSitesInternal() const { return call_site_table;}
+	const TypeTableVector_t* getTypeTable() const ;
+	uint64_t getTypeTableAddress() const { return type_table_addr; }
+	uint8_t getTypeTableEncoding() const { return type_table_encoding; }
 
 };
 
@@ -345,7 +362,11 @@ class fde_contents_t : public FDEContents_t, eh_frame_util_t<ptrsize>
 	uint64_t fde_end_addr;
 	uint64_t fde_range_len;
 	uint64_t lsda_addr;
-
+    uint64_t fde_start_addr_position;
+    uint64_t fde_end_addr_position;
+    uint64_t fde_end_addr_size;
+    uint64_t fde_lsda_addr_position;
+    uint64_t fde_lsda_addr_size;
 
 	lsda_t<ptrsize> lsda;
 	eh_program_t<ptrsize> eh_pgm;
@@ -358,8 +379,8 @@ class fde_contents_t : public FDEContents_t, eh_frame_util_t<ptrsize>
 		fde_start_addr(start_addr),
 		fde_end_addr(end_addr)
 	{} 
-
-
+	uint64_t getPosition() const { return fde_position; }
+	uint64_t getLength() const { return length; }
 	uint64_t getStartAddress() const { return fde_start_addr; } 
 	uint64_t getEndAddress() const {return fde_end_addr; }
 
@@ -375,7 +396,12 @@ class fde_contents_t : public FDEContents_t, eh_frame_util_t<ptrsize>
 	const LSDA_t* getLSDA() const { return &lsda; } // shared_ptr<LSDA_t>(new lsda_t<ptrsize>(lsda)) ;  }
 	const lsda_t<ptrsize>& getLSDAInternal() const { return lsda; }
 
-        uint64_t getLSDAAddress() const { return lsda_addr; }  
+    uint64_t getLSDAAddress() const { return lsda_addr; }
+    uint64_t getStartAddressPosition() const { return fde_start_addr_position; }
+    uint64_t getEndAddressPosition() const { return fde_end_addr_position; }
+    uint64_t getEndAddressSize() const { return fde_end_addr_size; }
+	uint64_t getLSDAAddressPosition() const { return fde_lsda_addr_position; }
+	uint64_t getLSDAAddressSize() const { return fde_lsda_addr_size; }
 
 	bool parse_fde(
 		const uint32_t &fde_position, 

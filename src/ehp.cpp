@@ -991,12 +991,13 @@ bool cie_contents_t<ptrsize>::parse_cie(
 	}
 	auto personality_encoding=uint8_t(DW_EH_PE_omit);
 	auto personality=uint64_t(0);
-	auto personality_pointer_position = uint64_t(0);
+	auto personality_pointer_position=uint64_t(0);
+	auto personality_pointer_size=uint64_t(0);
 	if(augmentation.find("P") != string::npos)
 	{
 		if(this->read_type(personality_encoding, position, eh_frame_scoop_data, max))
 			return true;
-		personality_pointer_position = position + eh_addr;
+		personality_pointer_position=position;
 
 		// indirect is OK as a personality encoding, but we don't need to go that far.
 		// we just need to record what's in the CIE, regardless of whether it's the actual
@@ -1004,6 +1005,7 @@ bool cie_contents_t<ptrsize>::parse_cie(
 		auto personality_encoding_sans_indirect = personality_encoding&(~DW_EH_PE_indirect);
 		if(this->read_type_with_encoding(personality_encoding_sans_indirect, personality, position, eh_frame_scoop_data, max, eh_addr))
 			return true;
+		personality_pointer_size=position - personality_pointer_position;
 	}
 
 	auto lsda_encoding=uint8_t(DW_EH_PE_omit);
@@ -1022,7 +1024,8 @@ bool cie_contents_t<ptrsize>::parse_cie(
 		return true;
 
 
-	c.cie_position=cie_position;
+	c.cie_position=cie_position +eh_addr;
+	c.length=length;
 	c.cie_id=cie_id;
 	c.cie_version=cie_version;
 	c.augmentation=augmentation;
@@ -1032,7 +1035,8 @@ bool cie_contents_t<ptrsize>::parse_cie(
 	c.augmentation_data_length=augmentation_data_length;
 	c.personality_encoding=personality_encoding;
 	c.personality=personality;
-	c.personality_pointer_position = personality_pointer_position;
+	c.personality_pointer_position=personality_pointer_position + eh_addr;
+	c.personality_pointer_size=personality_pointer_size;
 	c.lsda_encoding=lsda_encoding;
 	c.fde_encoding=fde_encoding;
 
@@ -1211,15 +1215,20 @@ bool lsda_call_site_t<ptrsize>::parse_lcs(
 	const uint64_t landing_pad_base_addr,
 	const uint64_t gcc_except_table_max)
 {
-	
+	call_site_addr_position = pos + data_addr;
 	if(this->read_type_with_encoding(cs_table_encoding, call_site_offset, pos, data, max, data_addr))
 		return true;
 	call_site_addr=landing_pad_base_addr+call_site_offset;
+	call_site_end_addr_position = pos + data_addr;
+
 	if(this->read_type_with_encoding(cs_table_encoding, call_site_length, pos, data, max, data_addr))
 		return true;
 	call_site_end_addr=call_site_addr+call_site_length;
+	landing_pad_addr_position = pos + data_addr;
+
 	if(this->read_type_with_encoding(cs_table_encoding, landing_pad_offset, pos, data, max, data_addr))
 		return true;
+	landing_pad_addr_end_position = pos + data_addr;
 
 	// calc the actual addr.
 	if(landing_pad_offset == 0)
@@ -1510,15 +1519,17 @@ bool fde_contents_t<ptrsize>::parse_fde(
 		return true;
 
 	auto fde_start_addr=uint64_t(0);
+	auto fde_start_addr_position = pos;
 	if(this->read_type_with_encoding(c.getCIE().getFDEEncoding(),fde_start_addr, pos, eh_frame_scoop_data, max, eh_addr))
 		return true;
 
 	auto fde_range_len=uint64_t(0);
+	auto fde_end_addr_position = pos;
 	if(this->read_type_with_encoding(c.getCIE().getFDEEncoding() & 0xf /* drop pc-rel bits */,fde_range_len, pos, eh_frame_scoop_data, max, eh_addr))
 		return true;
 
 	auto fde_end_addr=fde_start_addr+fde_range_len;
-
+	auto fde_end_addr_size = pos - fde_end_addr_position;
 	auto augmentation_data_length=uint64_t(0);
 	if(c.getCIE().getAugmentation().find("z") != string::npos)
 	{
@@ -1526,10 +1537,13 @@ bool fde_contents_t<ptrsize>::parse_fde(
 			return true;
 	}
 	auto lsda_addr=uint64_t(0);
+	auto fde_lsda_addr_position = pos;
+	auto fde_lsda_addr_size = 0;
 	if(c.getCIE().getLSDAEncoding()!= DW_EH_PE_omit)
 	{
 		if(this->read_type_with_encoding(c.getCIE().getLSDAEncoding(), lsda_addr, pos, eh_frame_scoop_data, max, eh_addr))
 			return true;
+		fde_lsda_addr_size = pos - fde_lsda_addr_position;
 		if(lsda_addr!=0)
 			if(c.lsda.parse_lsda(lsda_addr,gcc_except_scoop, fde_start_addr))
 				return true;
@@ -1538,7 +1552,7 @@ bool fde_contents_t<ptrsize>::parse_fde(
 	if(c.eh_pgm.parse_program(pos, eh_frame_scoop_data, end_pos))
 		return true;
 
-	c.fde_position=fde_position;
+	c.fde_position = fde_position + eh_addr;
 	c.cie_position=cie_position;
 	c.length=length;
 	c.id=id;
@@ -1546,6 +1560,11 @@ bool fde_contents_t<ptrsize>::parse_fde(
 	c.fde_end_addr=fde_end_addr;
 	c.fde_range_len=fde_range_len;
 	c.lsda_addr=lsda_addr;
+	c.fde_start_addr_position = fde_start_addr_position + eh_addr;
+	c.fde_end_addr_position = fde_end_addr_position + eh_addr;
+	c.fde_lsda_addr_position = fde_lsda_addr_position + eh_addr;
+	c.fde_end_addr_size = fde_end_addr_size;
+	c.fde_lsda_addr_size = fde_lsda_addr_size;
 
 	return false;
 }
