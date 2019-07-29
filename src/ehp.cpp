@@ -1348,17 +1348,22 @@ bool lsda_t<ptrsize>::parse_lsda(
 	auto type_table_pos=0;
 	if(type_table_encoding!=DW_EH_PE_omit)
 	{
+		type_table_addr_location = pos + data_addr;
 		if(this->read_uleb128(type_table_offset, pos, (const uint8_t* const)data.data(), max))
 			return true;
 		type_table_addr=lsda_addr+type_table_offset+(pos-start_pos);
 		type_table_pos=pos+type_table_offset;
 	}
 	else
+	{
 		type_table_addr=0;
+		type_table_addr_location=0;
+	}
 
 	if(this->read_type(cs_table_encoding, pos, (const uint8_t* const)data.data(), max))
 		return true;
 
+	cs_table_start_addr_location = pos + data_addr;
 	if(this->read_uleb128(cs_table_length, pos, (const uint8_t* const)data.data(), max))
 		return true;
 

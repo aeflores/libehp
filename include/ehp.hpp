@@ -142,9 +142,13 @@ class LSDA_t
 	virtual void print() const=0;
 	virtual uint64_t getLandingPadBaseAddress() const = 0;
     virtual const CallSiteVector_t* getCallSites() const =0;
+	virtual uint64_t getCallSiteTableAddress() const = 0;
+	virtual uint64_t getCallSiteTableAddressLocation() const = 0;
 	virtual uint8_t getCallSiteTableEncoding() const = 0;
     virtual const TypeTableVector_t* getTypeTable() const =0;
 	virtual uint64_t getTypeTableAddress() const = 0;
+	virtual uint64_t getTypeTableAddressLocation() const = 0;
+    virtual uint64_t getCallSiteTableLength() const = 0;
 	virtual uint8_t getTypeTableEncoding() const = 0;
 	unique_ptr<LSDA_t> factory(const string lsda_data, const uint64_t lsda_start_addr);
 };

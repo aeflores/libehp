@@ -309,9 +309,11 @@ class lsda_t : public LSDA_t, private eh_frame_util_t<ptrsize>
 	uint8_t type_table_encoding;
 	uint64_t type_table_offset;
 	uint64_t type_table_addr;
+	uint64_t type_table_addr_location;
 	uint8_t cs_table_encoding;
 	uint64_t cs_table_start_offset;
 	uint64_t cs_table_start_addr;
+	uint64_t cs_table_start_addr_location;
 	uint64_t cs_table_length;
 	uint64_t cs_table_end_addr;
 	uint64_t action_table_start_addr;
@@ -341,10 +343,14 @@ class lsda_t : public LSDA_t, private eh_frame_util_t<ptrsize>
 	void print() const;
 	uint64_t getLandingPadBaseAddress() const {  return landing_pad_base_addr; }
 	const CallSiteVector_t* getCallSites() const ;
+	uint64_t getCallSiteTableAddress() const { return cs_table_start_addr; }
+	uint64_t getCallSiteTableAddressLocation() const { return cs_table_start_addr_location; }
+	uint64_t getCallSiteTableLength() const { return cs_table_length; }
 	uint8_t getCallSiteTableEncoding() const { return cs_table_encoding; }
 	const call_site_table_t<ptrsize> getCallSitesInternal() const { return call_site_table;}
 	const TypeTableVector_t* getTypeTable() const ;
 	uint64_t getTypeTableAddress() const { return type_table_addr; }
+	uint64_t getTypeTableAddressLocation() const { return type_table_addr_location; }
 	uint8_t getTypeTableEncoding() const { return type_table_encoding; }
 
 };
