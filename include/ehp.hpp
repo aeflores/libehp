@@ -162,7 +162,9 @@ class FDEContents_t
 	FDEContents_t(const FDEContents_t&) {}
 	public:
 	virtual ~FDEContents_t() {}
+
 	virtual uint64_t getPosition() const =0;
+	virtual uint64_t getLength() const =0;
 	virtual uint64_t getStartAddress() const =0;
 	virtual uint64_t getEndAddress() const =0;
 	virtual const CIEContents_t& getCIE() const =0;
