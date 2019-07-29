@@ -39,6 +39,8 @@ class EHProgramInstruction_t
 	public: 
 	virtual ~EHProgramInstruction_t() {}
 	virtual void print(uint64_t &pc, int64_t caf=1) const = 0;
+	virtual tuple<string, int64_t, int64_t> decode() const = 0;
+	virtual uint64_t getSize() const = 0;
 	virtual bool isNop() const = 0;
 	virtual bool isDefCFAOffset() const = 0;
 	virtual bool isRestoreState() const = 0;
@@ -68,9 +70,14 @@ class CIEContents_t
 	public:
 	virtual ~CIEContents_t() {}
 	virtual const EHProgram_t& getProgram() const =0;
+	virtual uint64_t getPosition() const = 0;
+	virtual uint64_t getLength() const = 0;
 	virtual uint64_t getCAF() const =0;
 	virtual int64_t getDAF() const =0;
 	virtual uint64_t getPersonality() const =0;
+	virtual uint8_t getPersonalityEncoding() const = 0;
+	virtual uint64_t getPersonalityPointerPosition() const = 0;
+	virtual uint64_t getPersonalityPointerSize() const = 0;
 	virtual uint64_t getReturnRegister() const =0;
 	virtual string getAugmentation() const =0;
 	virtual uint8_t getLSDAEncoding() const =0;
@@ -113,8 +120,12 @@ class LSDACallSite_t
 	virtual ~LSDACallSite_t() {}
 	virtual const LSDACallSiteActionVector_t* getActionTable() const =0;
 	virtual uint64_t getCallSiteAddress() const  =0;
+	virtual uint64_t getCallSiteAddressPosition() const = 0;
 	virtual uint64_t getCallSiteEndAddress() const  =0;
+	virtual uint64_t getCallSiteEndAddressPosition() const = 0;
 	virtual uint64_t getLandingPadAddress() const  =0;
+	virtual uint64_t getLandingPadAddressPosition() const = 0;
+	virtual uint64_t getLandingPadAddressEndPosition() const = 0;
 	virtual void print() const=0;
 };
 
@@ -130,8 +141,16 @@ class LSDA_t
 	virtual ~LSDA_t() {}
 	virtual uint8_t getTTEncoding() const =0;
 	virtual void print() const=0;
-        virtual const CallSiteVector_t* getCallSites() const =0;
-        virtual const TypeTableVector_t* getTypeTable() const =0;
+	virtual uint64_t getLandingPadBaseAddress() const = 0;
+    virtual const CallSiteVector_t* getCallSites() const =0;
+	virtual uint64_t getCallSiteTableAddress() const = 0;
+	virtual uint64_t getCallSiteTableAddressLocation() const = 0;
+	virtual uint8_t getCallSiteTableEncoding() const = 0;
+    virtual const TypeTableVector_t* getTypeTable() const =0;
+	virtual uint64_t getTypeTableAddress() const = 0;
+	virtual uint64_t getTypeTableAddressLocation() const = 0;
+    virtual uint64_t getCallSiteTableLength() const = 0;
+	virtual uint8_t getTypeTableEncoding() const = 0;
 	unique_ptr<LSDA_t> factory(const string lsda_data, const uint64_t lsda_start_addr);
 };
 
@@ -143,12 +162,20 @@ class FDEContents_t
 	FDEContents_t(const FDEContents_t&) {}
 	public:
 	virtual ~FDEContents_t() {}
+
+	virtual uint64_t getPosition() const =0;
+	virtual uint64_t getLength() const =0;
 	virtual uint64_t getStartAddress() const =0;
 	virtual uint64_t getEndAddress() const =0;
 	virtual const CIEContents_t& getCIE() const =0;
 	virtual const EHProgram_t& getProgram() const =0;
 	virtual const LSDA_t* getLSDA() const =0;
 	virtual uint64_t getLSDAAddress() const =0;
+	virtual uint64_t getStartAddressPosition() const = 0;
+    virtual uint64_t getEndAddressPosition() const = 0;
+    virtual uint64_t getEndAddressSize() const = 0;
+    virtual uint64_t getLSDAAddressPosition() const = 0;
+    virtual uint64_t getLSDAAddressSize() const = 0;
 	virtual void print() const=0;	// move to ostream?  toString?
 
 };
@@ -169,7 +196,9 @@ class EHFrameParser_t
 	virtual const CIEVector_t* getCIEs() const =0;
 	virtual const FDEContents_t* findFDE(uint64_t addr) const =0; 
 
+#ifdef USE_ELFIO
 	static unique_ptr<const EHFrameParser_t> factory(const string filename);
+#endif
 	static unique_ptr<const EHFrameParser_t> factory(
 		uint8_t ptrsize,
 		const string eh_frame_data, const uint64_t eh_frame_data_start_addr,

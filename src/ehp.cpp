@@ -29,12 +29,17 @@
 #include "ehp_priv.hpp"
 #include "scoop_replacement.hpp"
 
+#ifdef USE_ELFIO
 #include <elfio/elfio.hpp>
+#endif
 #include <elf.h>
 
 using namespace std;
 using namespace EHP;
+
+#ifdef USE_ELFIO
 using namespace ELFIO;
+#endif
 
 #define ALLOF(s) begin(s), end(s)
 
@@ -494,6 +499,170 @@ void eh_program_insn_t<ptrsize>::print(uint64_t &pc, int64_t caf) const
 		}
 	}
 
+}
+
+template <int ptrsize>
+std::tuple<std::string, int64_t, int64_t> eh_program_insn_t<ptrsize>::decode() const
+{
+    // make sure uint8_t is an unsigned char.
+    static_assert(std::is_same<unsigned char, uint8_t>::value, "uint8_t is not unsigned char");
+
+    auto& data = program_bytes;
+    auto opcode = program_bytes[0];
+    auto opcode_upper2 = (uint8_t)(opcode >> 6);
+    auto opcode_lower6 = (uint8_t)(opcode & (0x3f));
+    auto pos = uint32_t(1);
+    auto max = program_bytes.size();
+    uint64_t uleb = 0;
+    uint64_t uleb2 = 0;
+    int64_t sleb = 0;
+    switch(opcode_upper2)
+    {
+        case 1:
+            // case DW_CFA_advance_loc:
+            return std::make_tuple("cf_advance_loc", +opcode_lower6, 0);
+        case 2:
+            if(eh_frame_util_t<ptrsize>::read_uleb128(uleb, pos, (const uint8_t* const)data.data(),
+                                                      max))
+                return std::make_tuple("unexpected_error", 0, 0);
+            // case DW_CFA_offset:
+            return std::make_tuple("offset", +opcode_lower6, uleb);
+        case 3:
+            // case DW_CFA_restore (register #):
+            return std::make_tuple("restore", +opcode_lower6, 0);
+        case 0:
+            switch(opcode_lower6)
+            {
+                case DW_CFA_nop:
+                    return std::make_tuple("nop", 0, 0);
+                case DW_CFA_remember_state:
+                    return std::make_tuple("remember_state", 0, 0);
+                case DW_CFA_restore_state:
+                    return std::make_tuple("restore_state", 0, 0);
+                // takes single uleb128
+                case DW_CFA_undefined:
+                    if(eh_frame_util_t<ptrsize>::read_uleb128(
+                           uleb, pos, (const uint8_t* const)data.data(), max))
+                        return std::make_tuple("unexpected_error", 0, 0);
+                    return std::make_tuple("undefined", uleb, 0);
+                case DW_CFA_same_value:
+                    if(eh_frame_util_t<ptrsize>::read_uleb128(
+                           uleb, pos, (const uint8_t* const)data.data(), max))
+                        return std::make_tuple("unexpected_error", 0, 0);
+                    return std::make_tuple("same_value", uleb, 0);
+                case DW_CFA_restore_extended:
+                    if(eh_frame_util_t<ptrsize>::read_uleb128(
+                           uleb, pos, (const uint8_t* const)data.data(), max))
+                        return std::make_tuple("unexpected_error", 0, 0);
+                    return std::make_tuple("restore_extended", uleb, 0);
+                case DW_CFA_def_cfa_register:
+                    if(eh_frame_util_t<ptrsize>::read_uleb128(
+                           uleb, pos, (const uint8_t* const)data.data(), max))
+                        return std::make_tuple("unexpected_error", 0, 0);
+                    return std::make_tuple("def_cfa_register", uleb, 0);
+                case DW_CFA_def_cfa_offset:
+                    if(eh_frame_util_t<ptrsize>::read_uleb128(
+                           uleb, pos, (const uint8_t* const)data.data(), max))
+                        return std::make_tuple("unexpected_error", 0, 0);
+                    return std::make_tuple("def_cfa_offset", uleb, 0);
+                case DW_CFA_set_loc:
+                {
+                    auto arg = uintptr_t(0xDEADBEEF);
+                    switch(ptrsize)
+                    {
+                        case 4:
+                            arg = *(uint32_t*)&data.data()[pos];
+                            break;
+                        case 8:
+                            arg = *(uint64_t*)&data.data()[pos];
+                            break;
+                    }
+                    return std::make_tuple("set_loc", arg, 0);
+                }
+                case DW_CFA_advance_loc1:
+                {
+                    auto loc = *(uint8_t*)(&data.data()[pos]);
+                    return std::make_tuple("advance_loc", loc, 0);
+                }
+
+                case DW_CFA_advance_loc2:
+                {
+                    auto loc = *(uint16_t*)(&data.data()[pos]);
+                    return std::make_tuple("advance_loc", loc, 0);
+                }
+
+                case DW_CFA_advance_loc4:
+                {
+                    auto loc = *(uint32_t*)(&data.data()[pos]);
+                    return std::make_tuple("advance_loc", loc, 0);
+                }
+                case DW_CFA_offset_extended:
+                    if(eh_frame_util_t<ptrsize>::read_uleb128(
+                           uleb, pos, (const uint8_t* const)data.data(), max))
+                        return std::make_tuple("unexpected_error", 0, 0);
+                    if(eh_frame_util_t<ptrsize>::read_uleb128(
+                           uleb2, pos, (const uint8_t* const)data.data(), max))
+                        return std::make_tuple("unexpected_error", 0, 0);
+                    return std::make_tuple("offset_extended", uleb, uleb2);
+                case DW_CFA_register:
+                    if(eh_frame_util_t<ptrsize>::read_uleb128(
+                           uleb, pos, (const uint8_t* const)data.data(), max))
+                        return std::make_tuple("unexpected_error", 0, 0);
+                    if(eh_frame_util_t<ptrsize>::read_uleb128(
+                           uleb2, pos, (const uint8_t* const)data.data(), max))
+                        return std::make_tuple("unexpected_error", 0, 0);
+                    return std::make_tuple("register", uleb, uleb2);
+
+                case DW_CFA_def_cfa:
+                    if(eh_frame_util_t<ptrsize>::read_uleb128(
+                           uleb, pos, (const uint8_t* const)data.data(), max))
+                        return std::make_tuple("unexpected_error", 0, 0);
+                    if(eh_frame_util_t<ptrsize>::read_uleb128(
+                           uleb2, pos, (const uint8_t* const)data.data(), max))
+                        return std::make_tuple("unexpected_error", 0, 0);
+                    return std::make_tuple("def_cfa", uleb, uleb2);
+
+                case DW_CFA_def_cfa_sf:
+                    if(eh_frame_util_t<ptrsize>::read_uleb128(
+                           uleb, pos, (const uint8_t* const)data.data(), max))
+                        return std::make_tuple("unexpected_error", 0, 0);
+                    if(eh_frame_util_t<ptrsize>::read_sleb128(
+                           sleb, pos, (const uint8_t* const)data.data(), max))
+                        return std::make_tuple("unexpected_error", 0, 0);
+                    return std::make_tuple("def_cfa_sf", uleb, sleb);
+                case DW_CFA_def_cfa_offset_sf:
+                {
+                    if(eh_frame_util_t<ptrsize>::read_sleb128(
+                           sleb, pos, (const uint8_t* const)data.data(), max))
+                        return std::make_tuple("unexpected_error", 0, 0);
+                    return std::make_tuple("def_cfa_offset_sf", sleb, 0);
+                }
+                case DW_CFA_offset_extended_sf:
+                {
+                    if(eh_frame_util_t<ptrsize>::read_uleb128(
+                           uleb, pos, (const uint8_t* const)data.data(), max))
+                        return std::make_tuple("unexpected_error", 0, 0);
+                    if(eh_frame_util_t<ptrsize>::read_sleb128(
+                           sleb, pos, (const uint8_t* const)data.data(), max))
+                        return std::make_tuple("unexpected_error", 0, 0);
+                    return std::make_tuple("offset_extended_sf", uleb, sleb);
+                }
+
+                case DW_CFA_def_cfa_expression:
+                case DW_CFA_expression:
+                case DW_CFA_val_expression:
+                /* SGI/MIPS specific */
+                case DW_CFA_MIPS_advance_loc8:
+                /* GNU extensions */
+				case DW_CFA_GNU_args_size:
+                case DW_CFA_GNU_window_save:
+                case DW_CFA_GNU_negative_offset_extended:
+                default:
+                    return std::make_tuple("unhandled_instruction", 0, 0);
+            }
+		default:
+			return std::make_tuple("unhandled_instruction", 0, 0);
+    }
 }
 
 template <int ptrsize>
@@ -986,10 +1155,13 @@ bool cie_contents_t<ptrsize>::parse_cie(
 	}
 	auto personality_encoding=uint8_t(DW_EH_PE_omit);
 	auto personality=uint64_t(0);
+	auto personality_pointer_position=uint64_t(0);
+	auto personality_pointer_size=uint64_t(0);
 	if(augmentation.find("P") != string::npos)
 	{
 		if(this->read_type(personality_encoding, position, eh_frame_scoop_data, max))
 			return true;
+		personality_pointer_position=position;
 
 		// indirect is OK as a personality encoding, but we don't need to go that far.
 		// we just need to record what's in the CIE, regardless of whether it's the actual
@@ -997,6 +1169,7 @@ bool cie_contents_t<ptrsize>::parse_cie(
 		auto personality_encoding_sans_indirect = personality_encoding&(~DW_EH_PE_indirect);
 		if(this->read_type_with_encoding(personality_encoding_sans_indirect, personality, position, eh_frame_scoop_data, max, eh_addr))
 			return true;
+		personality_pointer_size=position - personality_pointer_position;
 	}
 
 	auto lsda_encoding=uint8_t(DW_EH_PE_omit);
@@ -1015,7 +1188,8 @@ bool cie_contents_t<ptrsize>::parse_cie(
 		return true;
 
 
-	c.cie_position=cie_position;
+	c.cie_position=cie_position +eh_addr;
+	c.length=length;
 	c.cie_id=cie_id;
 	c.cie_version=cie_version;
 	c.augmentation=augmentation;
@@ -1025,6 +1199,8 @@ bool cie_contents_t<ptrsize>::parse_cie(
 	c.augmentation_data_length=augmentation_data_length;
 	c.personality_encoding=personality_encoding;
 	c.personality=personality;
+	c.personality_pointer_position=personality_pointer_position + eh_addr;
+	c.personality_pointer_size=personality_pointer_size;
 	c.lsda_encoding=lsda_encoding;
 	c.fde_encoding=fde_encoding;
 
@@ -1203,15 +1379,20 @@ bool lsda_call_site_t<ptrsize>::parse_lcs(
 	const uint64_t landing_pad_base_addr,
 	const uint64_t gcc_except_table_max)
 {
-	
+	call_site_addr_position = pos + data_addr;
 	if(this->read_type_with_encoding(cs_table_encoding, call_site_offset, pos, data, max, data_addr))
 		return true;
 	call_site_addr=landing_pad_base_addr+call_site_offset;
+	call_site_end_addr_position = pos + data_addr;
+
 	if(this->read_type_with_encoding(cs_table_encoding, call_site_length, pos, data, max, data_addr))
 		return true;
 	call_site_end_addr=call_site_addr+call_site_length;
+	landing_pad_addr_position = pos + data_addr;
+
 	if(this->read_type_with_encoding(cs_table_encoding, landing_pad_offset, pos, data, max, data_addr))
 		return true;
+	landing_pad_addr_end_position = pos + data_addr;
 
 	// calc the actual addr.
 	if(landing_pad_offset == 0)
@@ -1331,17 +1512,22 @@ bool lsda_t<ptrsize>::parse_lsda(
 	auto type_table_pos=0;
 	if(type_table_encoding!=DW_EH_PE_omit)
 	{
+		type_table_addr_location = pos + data_addr;
 		if(this->read_uleb128(type_table_offset, pos, (const uint8_t* const)data.data(), max))
 			return true;
 		type_table_addr=lsda_addr+type_table_offset+(pos-start_pos);
 		type_table_pos=pos+type_table_offset;
 	}
 	else
+	{
 		type_table_addr=0;
+		type_table_addr_location=0;
+	}
 
 	if(this->read_type(cs_table_encoding, pos, (const uint8_t* const)data.data(), max))
 		return true;
 
+	cs_table_start_addr_location = pos + data_addr;
 	if(this->read_uleb128(cs_table_length, pos, (const uint8_t* const)data.data(), max))
 		return true;
 
@@ -1502,15 +1688,17 @@ bool fde_contents_t<ptrsize>::parse_fde(
 		return true;
 
 	auto fde_start_addr=uint64_t(0);
+	auto fde_start_addr_position = pos;
 	if(this->read_type_with_encoding(c.getCIE().getFDEEncoding(),fde_start_addr, pos, eh_frame_scoop_data, max, eh_addr))
 		return true;
 
 	auto fde_range_len=uint64_t(0);
+	auto fde_end_addr_position = pos;
 	if(this->read_type_with_encoding(c.getCIE().getFDEEncoding() & 0xf /* drop pc-rel bits */,fde_range_len, pos, eh_frame_scoop_data, max, eh_addr))
 		return true;
 
 	auto fde_end_addr=fde_start_addr+fde_range_len;
-
+	auto fde_end_addr_size = pos - fde_end_addr_position;
 	auto augmentation_data_length=uint64_t(0);
 	if(c.getCIE().getAugmentation().find("z") != string::npos)
 	{
@@ -1518,10 +1706,13 @@ bool fde_contents_t<ptrsize>::parse_fde(
 			return true;
 	}
 	auto lsda_addr=uint64_t(0);
+	auto fde_lsda_addr_position = pos;
+	auto fde_lsda_addr_size = 0;
 	if(c.getCIE().getLSDAEncoding()!= DW_EH_PE_omit)
 	{
 		if(this->read_type_with_encoding(c.getCIE().getLSDAEncoding(), lsda_addr, pos, eh_frame_scoop_data, max, eh_addr))
 			return true;
+		fde_lsda_addr_size = pos - fde_lsda_addr_position;
 		if(lsda_addr!=0)
 			if(c.lsda.parse_lsda(lsda_addr,gcc_except_scoop, fde_start_addr))
 				return true;
@@ -1530,7 +1721,7 @@ bool fde_contents_t<ptrsize>::parse_fde(
 	if(c.eh_pgm.parse_program(pos, eh_frame_scoop_data, end_pos))
 		return true;
 
-	c.fde_position=fde_position;
+	c.fde_position = fde_position + eh_addr;
 	c.cie_position=cie_position;
 	c.length=length;
 	c.id=id;
@@ -1538,6 +1729,11 @@ bool fde_contents_t<ptrsize>::parse_fde(
 	c.fde_end_addr=fde_end_addr;
 	c.fde_range_len=fde_range_len;
 	c.lsda_addr=lsda_addr;
+	c.fde_start_addr_position = fde_start_addr_position + eh_addr;
+	c.fde_end_addr_position = fde_end_addr_position + eh_addr;
+	c.fde_lsda_addr_position = fde_lsda_addr_position + eh_addr;
+	c.fde_end_addr_size = fde_end_addr_size;
+	c.fde_lsda_addr_size = fde_lsda_addr_size;
 
 	return false;
 }
@@ -1753,6 +1949,7 @@ const FDEContents_t* split_eh_frame_impl_t<ptrsize>::findFDE(uint64_t addr) cons
 	return raw_ret_ptr;
 }
 
+#ifdef USE_ELFIO
 unique_ptr<const EHFrameParser_t> EHFrameParser_t::factory(const string filename)
 {
 	auto elfiop=unique_ptr<elfio>(new elfio);
@@ -1789,6 +1986,7 @@ unique_ptr<const EHFrameParser_t> EHFrameParser_t::factory(const string filename
 			gcc_except_table_section.first, gcc_except_table_section.second);
 
 }
+#endif
 
 unique_ptr<const EHFrameParser_t> EHFrameParser_t::factory(
 	uint8_t ptrsize,
