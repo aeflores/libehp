@@ -502,6 +502,170 @@ void eh_program_insn_t<ptrsize>::print(uint64_t &pc, int64_t caf) const
 }
 
 template <int ptrsize>
+std::tuple<std::string, int64_t, int64_t> eh_program_insn_t<ptrsize>::decode() const
+{
+    // make sure uint8_t is an unsigned char.
+    static_assert(std::is_same<unsigned char, uint8_t>::value, "uint8_t is not unsigned char");
+
+    auto& data = program_bytes;
+    auto opcode = program_bytes[0];
+    auto opcode_upper2 = (uint8_t)(opcode >> 6);
+    auto opcode_lower6 = (uint8_t)(opcode & (0x3f));
+    auto pos = uint32_t(1);
+    auto max = program_bytes.size();
+    uint64_t uleb = 0;
+    uint64_t uleb2 = 0;
+    int64_t sleb = 0;
+    switch(opcode_upper2)
+    {
+        case 1:
+            // case DW_CFA_advance_loc:
+            return std::make_tuple("cf_advance_loc", +opcode_lower6, 0);
+        case 2:
+            if(eh_frame_util_t<ptrsize>::read_uleb128(uleb, pos, (const uint8_t* const)data.data(),
+                                                      max))
+                return std::make_tuple("unexpected_error", 0, 0);
+            // case DW_CFA_offset:
+            return std::make_tuple("offset", +opcode_lower6, uleb);
+        case 3:
+            // case DW_CFA_restore (register #):
+            return std::make_tuple("restore", +opcode_lower6, 0);
+        case 0:
+            switch(opcode_lower6)
+            {
+                case DW_CFA_nop:
+                    return std::make_tuple("nop", 0, 0);
+                case DW_CFA_remember_state:
+                    return std::make_tuple("remember_state", 0, 0);
+                case DW_CFA_restore_state:
+                    return std::make_tuple("restore_state", 0, 0);
+                // takes single uleb128
+                case DW_CFA_undefined:
+                    if(eh_frame_util_t<ptrsize>::read_uleb128(
+                           uleb, pos, (const uint8_t* const)data.data(), max))
+                        return std::make_tuple("unexpected_error", 0, 0);
+                    return std::make_tuple("undefined", uleb, 0);
+                case DW_CFA_same_value:
+                    if(eh_frame_util_t<ptrsize>::read_uleb128(
+                           uleb, pos, (const uint8_t* const)data.data(), max))
+                        return std::make_tuple("unexpected_error", 0, 0);
+                    return std::make_tuple("same_value", uleb, 0);
+                case DW_CFA_restore_extended:
+                    if(eh_frame_util_t<ptrsize>::read_uleb128(
+                           uleb, pos, (const uint8_t* const)data.data(), max))
+                        return std::make_tuple("unexpected_error", 0, 0);
+                    return std::make_tuple("restore_extended", uleb, 0);
+                case DW_CFA_def_cfa_register:
+                    if(eh_frame_util_t<ptrsize>::read_uleb128(
+                           uleb, pos, (const uint8_t* const)data.data(), max))
+                        return std::make_tuple("unexpected_error", 0, 0);
+                    return std::make_tuple("def_cfa_register", uleb, 0);
+                case DW_CFA_def_cfa_offset:
+                    if(eh_frame_util_t<ptrsize>::read_uleb128(
+                           uleb, pos, (const uint8_t* const)data.data(), max))
+                        return std::make_tuple("unexpected_error", 0, 0);
+                    return std::make_tuple("def_cfa_offset", uleb, 0);
+                case DW_CFA_set_loc:
+                {
+                    auto arg = uintptr_t(0xDEADBEEF);
+                    switch(ptrsize)
+                    {
+                        case 4:
+                            arg = *(uint32_t*)&data.data()[pos];
+                            break;
+                        case 8:
+                            arg = *(uint64_t*)&data.data()[pos];
+                            break;
+                    }
+                    return std::make_tuple("set_loc", arg, 0);
+                }
+                case DW_CFA_advance_loc1:
+                {
+                    auto loc = *(uint8_t*)(&data.data()[pos]);
+                    return std::make_tuple("advance_loc", loc, 0);
+                }
+
+                case DW_CFA_advance_loc2:
+                {
+                    auto loc = *(uint16_t*)(&data.data()[pos]);
+                    return std::make_tuple("advance_loc", loc, 0);
+                }
+
+                case DW_CFA_advance_loc4:
+                {
+                    auto loc = *(uint32_t*)(&data.data()[pos]);
+                    return std::make_tuple("advance_loc", loc, 0);
+                }
+                case DW_CFA_offset_extended:
+                    if(eh_frame_util_t<ptrsize>::read_uleb128(
+                           uleb, pos, (const uint8_t* const)data.data(), max))
+                        return std::make_tuple("unexpected_error", 0, 0);
+                    if(eh_frame_util_t<ptrsize>::read_uleb128(
+                           uleb2, pos, (const uint8_t* const)data.data(), max))
+                        return std::make_tuple("unexpected_error", 0, 0);
+                    return std::make_tuple("offset_extended", uleb, uleb2);
+                case DW_CFA_register:
+                    if(eh_frame_util_t<ptrsize>::read_uleb128(
+                           uleb, pos, (const uint8_t* const)data.data(), max))
+                        return std::make_tuple("unexpected_error", 0, 0);
+                    if(eh_frame_util_t<ptrsize>::read_uleb128(
+                           uleb2, pos, (const uint8_t* const)data.data(), max))
+                        return std::make_tuple("unexpected_error", 0, 0);
+                    return std::make_tuple("register", uleb, uleb2);
+
+                case DW_CFA_def_cfa:
+                    if(eh_frame_util_t<ptrsize>::read_uleb128(
+                           uleb, pos, (const uint8_t* const)data.data(), max))
+                        return std::make_tuple("unexpected_error", 0, 0);
+                    if(eh_frame_util_t<ptrsize>::read_uleb128(
+                           uleb2, pos, (const uint8_t* const)data.data(), max))
+                        return std::make_tuple("unexpected_error", 0, 0);
+                    return std::make_tuple("def_cfa", uleb, uleb2);
+
+                case DW_CFA_def_cfa_sf:
+                    if(eh_frame_util_t<ptrsize>::read_uleb128(
+                           uleb, pos, (const uint8_t* const)data.data(), max))
+                        return std::make_tuple("unexpected_error", 0, 0);
+                    if(eh_frame_util_t<ptrsize>::read_sleb128(
+                           sleb, pos, (const uint8_t* const)data.data(), max))
+                        return std::make_tuple("unexpected_error", 0, 0);
+                    return std::make_tuple("def_cfa_sf", uleb, sleb);
+                case DW_CFA_def_cfa_offset_sf:
+                {
+                    if(eh_frame_util_t<ptrsize>::read_sleb128(
+                           sleb, pos, (const uint8_t* const)data.data(), max))
+                        return std::make_tuple("unexpected_error", 0, 0);
+                    return std::make_tuple("def_cfa_offset_sf", sleb, 0);
+                }
+                case DW_CFA_offset_extended_sf:
+                {
+                    if(eh_frame_util_t<ptrsize>::read_uleb128(
+                           uleb, pos, (const uint8_t* const)data.data(), max))
+                        return std::make_tuple("unexpected_error", 0, 0);
+                    if(eh_frame_util_t<ptrsize>::read_sleb128(
+                           sleb, pos, (const uint8_t* const)data.data(), max))
+                        return std::make_tuple("unexpected_error", 0, 0);
+                    return std::make_tuple("offset_extended_sf", uleb, sleb);
+                }
+
+                case DW_CFA_def_cfa_expression:
+                case DW_CFA_expression:
+                case DW_CFA_val_expression:
+                /* SGI/MIPS specific */
+                case DW_CFA_MIPS_advance_loc8:
+                /* GNU extensions */
+				case DW_CFA_GNU_args_size:
+                case DW_CFA_GNU_window_save:
+                case DW_CFA_GNU_negative_offset_extended:
+                default:
+                    return std::make_tuple("unhandled_instruction", 0, 0);
+            }
+		default:
+			return std::make_tuple("unhandled_instruction", 0, 0);
+    }
+}
+
+template <int ptrsize>
 void eh_program_insn_t<ptrsize>::push_byte(uint8_t c) { program_bytes.push_back(c); }
 
 template <int ptrsize>

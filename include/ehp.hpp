@@ -39,6 +39,7 @@ class EHProgramInstruction_t
 	public: 
 	virtual ~EHProgramInstruction_t() {}
 	virtual void print(uint64_t &pc, int64_t caf=1) const = 0;
+	virtual std::tuple<std::string, int64_t, int64_t> decode() const = 0;
 	virtual uint64_t getSize() const = 0;
 	virtual bool isNop() const = 0;
 	virtual bool isDefCFAOffset() const = 0;
