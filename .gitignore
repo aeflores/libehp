@@ -6,4 +6,6 @@ src/libehp.a
 src/.*.swp
 src/*.o
 include/.*.swp
+*.os
+*.so
 

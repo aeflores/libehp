@@ -25,6 +25,10 @@
 #include <vector>
 
 
+#ifndef USE_ELFIO 
+#define USE_ELFIO 1
+#endif
+
 namespace EHP
 {
 
@@ -196,7 +200,7 @@ class EHFrameParser_t
 	virtual const CIEVector_t* getCIEs() const =0;
 	virtual const FDEContents_t* findFDE(uint64_t addr) const =0; 
 
-#ifdef USE_ELFIO
+#if USE_ELFIO 
 	static unique_ptr<const EHFrameParser_t> factory(const string filename);
 #endif
 	static unique_ptr<const EHFrameParser_t> factory(
