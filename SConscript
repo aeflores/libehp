@@ -19,6 +19,8 @@ import os
 Import('env')
 
 env.Replace(debug=ARGUMENTS.get("debug",0))
+env.Append(CFLAGS=" -DUSE_ELFIO ")
+env.Append(CXXFLAGS=" -DUSE_ELFIO ")
 if int(env['debug']) == 1:
         print "Setting debug mode"
         env.Append(CFLAGS=" -g ")

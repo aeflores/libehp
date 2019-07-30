@@ -89,7 +89,7 @@ class eh_program_insn_t  : public EHProgramInstruction_t
 	eh_program_insn_t(const string &s) ;
 
 	void print(uint64_t &pc, int64_t caf) const;
-	std::tuple<std::string, int64_t, int64_t> decode() const;
+	tuple<string, int64_t, int64_t> decode() const;
 	uint64_t getSize() const { return program_bytes.size(); }
 	void push_byte(uint8_t c) ;
 
