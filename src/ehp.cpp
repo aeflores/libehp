@@ -1311,6 +1311,10 @@ bool lsda_type_table_entry_t<ptrsize>::parse(
 		case DW_EH_PE_sdata4:
 			tt_encoding_size=4;
 			break;
+		case DW_EH_PE_udata8:
+		case DW_EH_PE_sdata8:
+			tt_encoding_size=8;
+			break;
 		case DW_EH_PE_absptr:
 			tt_encoding_size=ptrsize;
 			break;
