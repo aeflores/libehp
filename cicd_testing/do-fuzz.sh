@@ -11,7 +11,7 @@ function main()
 	strip test.exe
 
 	# better done with boost add -q -i 
-	turbo-cli boost add libehp || trust
+	turbo-cli boost add libehp || true
 	local bid=$(turbo-cli boost list|grep libehp|cut -d" " -f1)
 
 	turbo-cli seed add $bid cicd_testing/ehp-seed.yaml || true
