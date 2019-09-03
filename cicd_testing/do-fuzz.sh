@@ -15,7 +15,7 @@ function main()
 
 	# better done with boost add -q -i 
 	turbo-cli boost add libehp || true
-	local bid=$(turbo-cli boost list|grep libehp|cut -d" " -f1)
+	local bid=$(turbo-cli boost list|grep libehp|cut -d"	" -f1)
 
 	turbo-cli seed add $bid cicd_testing/ehp-seed.yaml || true
 	local vid=$(turbo-cli version add -q $bid ../lib/libehp.so)
