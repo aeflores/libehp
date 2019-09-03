@@ -29,6 +29,8 @@ function cleanup()
 function main()
 {
 	scons || cleanup 
+	export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$PWD/../lib
+
 	./test.exe ./test.exe || cleanup 
 	./test.exe /bin/ls || cleanup 
 	./test.exe /bin/bash || cleanup 
