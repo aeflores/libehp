@@ -6,10 +6,9 @@ set -x
 
 function main()
 {
-	cd /tmp/libehp_test
 	scons -j3
 	cd test
-	./test.sh
+	./test.sh || exit 1
 	exit 0
 }
 
