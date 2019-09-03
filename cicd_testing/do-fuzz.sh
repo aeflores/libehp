@@ -2,6 +2,8 @@
 
 function main()
 {
+	set -e 
+	set -x
 	# build software
 	git submodule sync --recursive
 	git submodule update --recursive --init
