@@ -1,0 +1,66 @@
+
+before_script:
+  - "source ~gitlab-runner/cicd_support/cicd_support.shinc"
+
+
+after_script:
+  - "echo Test Complete."
+
+stages:
+  - clean
+  - build
+  - test
+  - fuzz
+  - deploy
+
+
+#
+# Cleaning
+#
+do-clean-ubuntu18:
+  stage: clean
+  script:
+    - ./cicd_testing/do-clean.sh
+  tags:
+    - ubuntu18
+
+#
+# Building
+#
+do-build-ubuntu18:
+  stage: build
+  script:
+    - ./cicd_testing/do-build.sh
+  tags:
+    - ubuntu18
+
+#
+# Testing
+#
+do-test-ubuntu18:
+  stage: build
+  script:
+    - ./cicd_testing/do-test.sh
+  tags:
+    - ubuntu18
+
+
+#
+# Turbo Fuzzing
+#
+do-fuzz-ubuntu18:
+  stage: build
+  script:
+    - ./cicd_testing/do-fuzz.sh
+  tags:
+    - libehpfuzzpod
+
+#
+# Deploy
+#
+do-deploy-ubuntu18:
+  stage: build
+  script:
+    - ./cicd_testing/do-deploy.sh
+  tags:
+    - ubuntu18
