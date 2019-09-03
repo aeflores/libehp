@@ -2,7 +2,10 @@
 
 function main()
 {
-	scons -j3
+	# build software
+	git submodule sync --recursive
+	git submodule update --recursive --init
+
 	cd test
 	scons 
 	strip test.exe
