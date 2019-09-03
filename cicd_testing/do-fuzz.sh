@@ -19,7 +19,7 @@ function main()
 	local bid=$(turbo-cli boost list|grep libehp|cut -d"	" -f1)
 
 	turbo-cli seed add $bid cicd_testing/ehp-seed.yaml || true
-	local vid=$(turbo-cli version add -q $bid ../lib/libehp.so)
+	local vid=$(turbo-cli version add -q $bid ib/libehp.so)
 	turbo-cli fuzz --fuzz-config cicd_testing/afl.yaml --app-config cicd_testing/ehp-config.yaml --ver-id $vid
 
 	local report=$(turbo-cli log get report $vid)
