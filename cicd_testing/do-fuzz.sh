@@ -12,6 +12,7 @@ function main()
 	cd test
 	scons 
 	strip test.exe
+	cd ..
 
 	# better done with boost add -q -i 
 	turbo-cli boost add libehp || true
