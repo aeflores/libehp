@@ -14,6 +14,5 @@ env|grep CICD
 
 time rsync -a --exclude='.git'  $CICD_TO_TEST_DIR/ /tmp/libehp_test
 cd /tmp/libehp_test
-source set_env_vars
 scons -j 3
 
