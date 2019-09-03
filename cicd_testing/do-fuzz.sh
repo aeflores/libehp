@@ -6,6 +6,7 @@ function main()
 	git submodule sync --recursive
 	git submodule update --recursive --init
 
+	scons -j3
 	cd test
 	scons 
 	strip test.exe

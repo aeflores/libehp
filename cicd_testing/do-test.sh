@@ -6,8 +6,7 @@ set -x
 
 function main()
 {
-	scons -j3
-	cd test
+	cd /tmp/libehp_test/test
 	./test.sh || exit 1
 	exit 0
 }
