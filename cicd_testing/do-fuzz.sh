@@ -11,8 +11,10 @@ function main()
 	scons -j3
 	cd test
 	scons 
-	strip test.exe
 	cd ..
+
+	# force reinstall tools so we are always up-to-date
+	yes | sudo bash -c "$(curl -fsSL allzp.zephyr-software.io/turbo/cli-install.sh)"
 
 	# better done with boost add -q -i 
 	turbo-cli boost add libehp || true

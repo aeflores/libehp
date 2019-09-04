@@ -1,4 +1,5 @@
 
-name: "test config"
+name: "libehp test config"
 
-preserve-program-name: false
+ld-path-prepend-version: "libehp.so"
+

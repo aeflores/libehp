@@ -37,7 +37,6 @@ myenv=myenv.Clone(CPPPATH=Split(cpppath))
 myenv.Append(CXXFLAGS = " -std=c++11 -Wall -Werror -fmax-errors=1 -g ")
 
 lib=myenv.Program("test.exe",  Split(files), LIBPATH=Split(LIBPATH), LIBS=Split(LIBS))
-install=myenv.Install("../lib/", lib)
-Default(install)
+Default(lib)
 
-Return('install')
+Return('lib')
