@@ -29,7 +29,7 @@ function main()
 	echo "The report is: "
 	echo $report
 
-	local crash_count=$(cat report|shyaml get-value crashing-input-count)
+	local crash_count=$(cat report|shyaml get-value failing-input-count)
 
 	if [[ $crash_count == 0 ]]; then
 		echo "No crashes found"
