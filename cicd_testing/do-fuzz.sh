@@ -3,7 +3,6 @@
 function main()
 {
 	set -e 
-	set -x
 	# build software
 	git submodule sync --recursive
 	git submodule update --recursive --init
@@ -24,12 +23,12 @@ function main()
 	local vid=$(turbo-cli version add -q $bid lib/libehp.so)
 	turbo-cli fuzz --fuzz-config cicd_testing/afl.yaml --app-config cicd_testing/ehp-config.yaml --ver-id $vid
 
-	local report=$(turbo-cli log get report $vid)
+	local report="$(turbo-cli log get report $vid)"
 
 	echo "The report is: "
-	echo $report
+	echo "$report"
 
-	local crash_count=$(echo $report|shyaml get-value failing-input-count)
+	local declare crash_count=$(echo "$report"|shyaml get-value failing-input-count)
 
 	if [[ $crash_count == 0 ]]; then
 		echo "No crashes found"
