@@ -60,11 +60,24 @@ int main(int argc, char* argv[])
 		usage(argc,argv);
 	}
 
-	auto ehp = EHFrameParser_t::factory(argv[1]);
-	ehp->print();
+	try
+	{
+		auto ehp = EHFrameParser_t::factory(argv[1]);
+		ehp->print();
 
 
-	print_lps(ehp.get());
+		print_lps(ehp.get());
+	}
+	catch(const exception& e )
+	{
+		cout <<" libehp threw an exception, this may or may not be an error depending on the input file" << endl;
+		cout << e.what() << endl;
+	}
+	catch(...)
+	{
+		cout <<" ehp threw an exception of an unknonwn type -- this shouldn't happen " << endl;
+		abort();
+	};
 
 	return 0;
 }
