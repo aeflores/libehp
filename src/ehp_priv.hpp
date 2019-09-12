@@ -23,7 +23,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <map>
-#include <assert.h>
 #include <algorithm>
 #include <memory>
 #include <set>
