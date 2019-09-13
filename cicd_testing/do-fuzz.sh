@@ -40,6 +40,7 @@ function main()
 		echo "No crashes found"
 		exit 0
 	else
+		set -x 
 		# upload the report.
 		local proj_id=114
 		local upload_report=$(curl --request POST --header "PRIVATE-TOKEN: PXLgVFpgjmmugAiHTJzx " --form "file=@report.txt" https://git.zephyr-software.com/api/v4/projects/proj_id/uploads)
