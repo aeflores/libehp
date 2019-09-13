@@ -64,7 +64,7 @@ EOM
 
 
 		# finally post an issue
-		curl --request POST --data-urlencode "desc=$desc" --data-urlencode "title=$title" --header "PRIVATE-TOKEN: PXLgVFpgjmmugAiHTJzx " "https://git.zephyr-software.com//api/v4/projects/$proj_id/issues?&labels=bug&assignee_ids[]=3")
+		curl --request POST --data-urlencode "desc=$desc" --data-urlencode "title=$title" --header "PRIVATE-TOKEN: PXLgVFpgjmmugAiHTJzx " "https://git.zephyr-software.com//api/v4/projects/$proj_id/issues?&labels=bug&assignee_ids[]=3"
 
 		echo "$crash_count count crashes found!"
 		exit 1
