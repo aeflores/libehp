@@ -49,7 +49,7 @@ function main()
 		local host=$(hostname)
 		local md=$(echo $upload_report | shyaml get-value markdown)
 		local desc=""
-		set -e
+		set +e # allow read to return non-zero as read does that on EOF
 		read -r -d '' desc << EOM
 Turbo automatically found $crash_count crashes!
 
@@ -62,7 +62,7 @@ Machine details: $mach
 Full crash report is available here: $md
 
 EOM
-		set +e
+		set -e
 		local title="Turbo found $crash_count bugs in libEHP on $date"
 
 
