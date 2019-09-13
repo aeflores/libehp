@@ -41,8 +41,8 @@ function main()
 		exit 0
 	else
 		# upload the report.
-		local upload_report=$(curl --request POST --header "PRIVATE-TOKEN: PXLgVFpgjmmugAiHTJzx " --form "file=@report.txt" https://git.zephyr-software.com/api/v4/projects/159/uploads)
-
+		local proj_id=114
+		local upload_report=$(curl --request POST --header "PRIVATE-TOKEN: PXLgVFpgjmmugAiHTJzx " --form "file=@report.txt" https://git.zephyr-software.com/api/v4/projects/proj_id/uploads)
 		local date=$(date)
 		local mach=$(uname -a)
 		local host=$(hostname)
@@ -62,7 +62,9 @@ Full crash report is available here: $md
 EOM
 		local title="Turbo found $crash_count bugs in libEHP on $date"
 
-		curl --request POST --data-urlencode "desc=$desc" --data-urlencode "title=$title" --header "PRIVATE-TOKEN: PXLgVFpgjmmugAiHTJzx " "https://git.zephyr-software.com//api/v4/projects/159/issues?&labels=bug&assignee_ids[]=3")
+
+		# finally post an issue
+		curl --request POST --data-urlencode "desc=$desc" --data-urlencode "title=$title" --header "PRIVATE-TOKEN: PXLgVFpgjmmugAiHTJzx " "https://git.zephyr-software.com//api/v4/projects/$proj_id/issues?&labels=bug&assignee_ids[]=3")
 
 		echo "$crash_count count crashes found!"
 		exit 1
