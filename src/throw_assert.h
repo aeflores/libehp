@@ -8,3 +8,4 @@
 #include <assert.h>
 #define throw_assert(a) { assert(a); } 
 #endif
+#endif
