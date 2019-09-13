@@ -21,11 +21,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include <map>
-#include <assert.h>
 #include <algorithm>
 #include <memory>
 
 #include <ehp.hpp>
+#include "throw_assert.h"
 #include "ehp_priv.hpp"
 #include "scoop_replacement.hpp"
 
@@ -137,7 +137,7 @@ bool eh_frame_util_t<ptrsize>::read_type_with_encoding
 					return true;
 				break;
 			}
-			assert(0);
+			throw_assert(0);
 				
 		}
 		case DW_EH_PE_sdata2 :
@@ -167,7 +167,7 @@ bool eh_frame_util_t<ptrsize>::read_type_with_encoding
 
 		case DW_EH_PE_signed :
 		default:
-			assert(0);
+			throw_assert(0);
 	};
 
 	switch(encoding_upper8)
@@ -183,7 +183,7 @@ bool eh_frame_util_t<ptrsize>::read_type_with_encoding
 		case DW_EH_PE_aligned:
 		case DW_EH_PE_indirect:
 		default:
-			assert(0);
+			throw_assert(0);
 			return true;
 	}
 	return false;
@@ -946,7 +946,7 @@ bool eh_program_insn_t<ptrsize>::advance(uint64_t &cur_addr, uint64_t CAF) const
 			{
 				case DW_CFA_set_loc:
 				{
-					assert(0);
+					throw_assert(0);
 					return true;
 				}
 				case DW_CFA_advance_loc1:
@@ -1149,7 +1149,7 @@ bool cie_contents_t<ptrsize>::parse_cie(
 		return_address_register_column=return_address_register_column_64;
 	}
 	else
-		assert(0);
+		throw_assert(0);
 
 	auto augmentation_data_length=uint64_t(0);
 	if(augmentation.find("z") != string::npos)
@@ -1319,7 +1319,7 @@ bool lsda_type_table_entry_t<ptrsize>::parse(
 			tt_encoding_size=ptrsize;
 			break;
 		default:
-			assert(0);
+			throw_assert(0);
 	}
 	const auto orig_act_pos=uint32_t(tt_pos+(-index*tt_encoding_size));
 	auto act_pos=uint32_t(tt_pos+(-index*tt_encoding_size));
@@ -1432,11 +1432,11 @@ bool lsda_call_site_t<ptrsize>::parse_lcs(
 	}
 	else if( action < 0 )
 	{
-		assert(0); // how can the index into the action table be negative?
+		throw_assert(0); // how can the index into the action table be negative?
 	}
 	else
 	{
-		assert(0); // how is this possible?
+		throw_assert(0); // how is this possible?
 	}
 
 	return false;
@@ -1600,7 +1600,7 @@ bool lsda_t<ptrsize>::parse_lsda(
 					// we ignore for now.  A warning is printed if they are found in build_ir. 
 				}
 				else 
-					assert(0);
+					throw_assert(0);
 
 			};
 		
@@ -1829,7 +1829,7 @@ bool split_eh_frame_impl_t<ptrsize>::iterate_fdes()
 		
 
 		// next CIE/FDE
-		assert(position<=next_position); 	// so we don't accidentally over-read a CIE/FDE
+		throw_assert(position<=next_position); 	// so we don't accidentally over-read a CIE/FDE
 		position=next_position;
 	}
 	return false;
