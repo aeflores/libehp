@@ -61,13 +61,16 @@ Machine details: $mach
 
 Full crash report is available here: $md
 
+[See job details](https://git.zephyr-software.com/opensrc/libehp/-/jobs/$CI_JOB_ID)
+[See pipeline details](https://git.zephyr-software.com/opensrc/libehp/pipelines/$CI_PIPELINE_ID)
+
 EOM
 		set -e
 		local title="Turbo found $crash_count bugs in libEHP on $date"
 
 
 		# finally post an issue
-		curl --request POST --data-urlencode "desc=$desc" --data-urlencode "title=$title" --header "PRIVATE-TOKEN: PXLgVFpgjmmugAiHTJzx " "https://git.zephyr-software.com//api/v4/projects/$proj_id/issues?&labels=bug&assignee_ids[]=3"
+		curl --request POST --data-urlencode "description=$desc" --data-urlencode "title=$title" --header "PRIVATE-TOKEN: PXLgVFpgjmmugAiHTJzx " "https://git.zephyr-software.com//api/v4/projects/$proj_id/issues?&labels=bug,turbo&assignee_ids[]=3"
 
 		echo "$crash_count count crashes found!"
 		exit 1
