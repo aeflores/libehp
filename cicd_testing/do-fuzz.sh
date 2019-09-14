@@ -31,7 +31,7 @@ function main()
 	local report="$(turbo-cli log get report $vid)"
 
 	echo "The report is: "
-	echo "$report" | tee report.txt
+	echo "$report" | tee fail_report.yaml
 
 
 	local declare crash_count=$(echo "$report"|shyaml get-value failing-input-count)
@@ -43,7 +43,7 @@ function main()
 		set -x 
 		# upload the report.
 		local proj_id=114
-		local upload_report=$(curl --request POST --header "PRIVATE-TOKEN: PXLgVFpgjmmugAiHTJzx " --form "file=@report.txt" https://git.zephyr-software.com/api/v4/projects/$proj_id/uploads)
+		local upload_report=$(curl --request POST --header "PRIVATE-TOKEN: PXLgVFpgjmmugAiHTJzx " --form "file=@fail_report.yaml" https://git.zephyr-software.com/api/v4/projects/$proj_id/uploads)
 		local date=$(date)
 		local mach=$(uname -a)
 		local host=$(hostname)
@@ -59,10 +59,10 @@ Date: $date
 
 Machine details: $mach
 
-Full crash report is available here: $md
+Full crash report is available here:   $md
 
-[See job details](https://git.zephyr-software.com/opensrc/libehp/-/jobs/$CI_JOB_ID)
-[See pipeline details](https://git.zephyr-software.com/opensrc/libehp/pipelines/$CI_PIPELINE_ID)
+See [job details](https://git.zephyr-software.com/opensrc/libehp/-/jobs/$CI_JOB_ID)
+and [pipeline details](https://git.zephyr-software.com/opensrc/libehp/pipelines/$CI_PIPELINE_ID).
 
 EOM
 		set -e
