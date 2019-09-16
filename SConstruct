@@ -19,6 +19,9 @@
 
 env=Environment()
 Export('env')
+
+env.Replace(debug=ARGUMENTS.get("debug",0))
+
 lib=SConscript("SConscript")
 
 Return('lib')

@@ -243,10 +243,12 @@ bool eh_frame_util_t<ptrsize>::read_sleb128 (
 	auto byte=uint8_t(0);
 	do
 	{
+		if ( position > max )
+			return false;
 		byte = data [position]; 
-		position++;
 		result |= ((byte & 0x7f)<< shift);
 		shift += 7;
+		position++;
 	} while( (byte & 0x80) != 0);
 
 	/* sign bit of byte is second high order bit (0x40) */

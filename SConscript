@@ -17,24 +17,23 @@
 import os
 
 Import('env')
-myenv=env.Clone();
 
-myenv.Replace(debug=ARGUMENTS.get("debug",0))
-myenv.Append(CFLAGS=" -DUSE_ELFIO=1 ")
-myenv.Append(CXXFLAGS=" -DUSE_ELFIO=1 ")
-if int(myenv['debug']) == 1:
+env.Replace(debug=ARGUMENTS.get("debug",0))
+env.Append(CFLAGS=" -DUSE_ELFIO=1 ")
+env.Append(CXXFLAGS=" -DUSE_ELFIO=1 ")
+if int(env['debug']) == 1:
         print "Setting debug mode"
-        myenv.Append(CFLAGS=" -g ")
-        myenv.Append(CXXFLAGS=" -g ")
-        myenv.Append(LINKFLAGS=" -g ")
+        env.Append(CFLAGS=" -g ")
+        env.Append(CXXFLAGS=" -g ")
+        env.Append(LINKFLAGS=" -g ")
 else:
         print "Setting release mode"
-        myenv.Append(CFLAGS=" -O3 ")
-        myenv.Append(CXXFLAGS=" -O3 ")
-        myenv.Append(LINKFLAGS=" -O3 ")
+        env.Append(CFLAGS=" -O3 ")
+        env.Append(CXXFLAGS=" -O3 ")
+        env.Append(LINKFLAGS=" -O3 ")
 
 
-lib=myenv.SConscript("src/SConscript")
+lib=env.SConscript("src/SConscript")
 
 Return('lib')
 
