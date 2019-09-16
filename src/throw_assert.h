@@ -1,5 +1,7 @@
 
 
+#define use_throw_assert
+
 #ifndef throw_asssert
 
 #ifdef use_throwing_assert
