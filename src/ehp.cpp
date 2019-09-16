@@ -444,7 +444,6 @@ void eh_program_insn_t<ptrsize>::print(uint64_t &pc, int64_t caf) const
 					if(eh_frame_util_t<ptrsize>::read_uleb128(uleb, pos, (const uint8_t* const)data.data(), max))
 						return ;
 					cout<<"				def_cfa_expression "<<dec<<uleb<<endl;
-					pos+=uleb;		// doing this old school for now, as we aren't printing the expression.
 					break;
 				}
 				case DW_CFA_expression:
@@ -456,7 +455,6 @@ void eh_program_insn_t<ptrsize>::print(uint64_t &pc, int64_t caf) const
 					if(eh_frame_util_t<ptrsize>::read_uleb128(uleb2, pos, (const uint8_t* const)data.data(), max))
 						return ;
 					cout<<"                              expression "<<dec<<uleb1<<" "<<uleb2<<endl;
-					pos+=uleb2;
 					break;
 				}
 				case DW_CFA_val_expression:
@@ -468,7 +466,6 @@ void eh_program_insn_t<ptrsize>::print(uint64_t &pc, int64_t caf) const
 					if(eh_frame_util_t<ptrsize>::read_uleb128(uleb2, pos, (const uint8_t* const)data.data(), max))
 						return ;
 					cout<<"                              val_expression "<<dec<<uleb1<<" "<<uleb2<<endl;
-					pos+=uleb2;
 					break;
 				}
 				case DW_CFA_def_cfa_offset_sf:
@@ -755,18 +752,26 @@ bool eh_program_insn_t<ptrsize>::parse_insn(
 
 				case DW_CFA_set_loc:
 					pos+=ptrsize;
+					if(pos>max)
+						return true;
 					break;
 
 				case DW_CFA_advance_loc1:
 					pos+=1;
+					if(pos>max)
+						return true;
 					break;
 
 				case DW_CFA_advance_loc2:
 					pos+=2;
+					if(pos>max)
+						return true;
 					break;
 
 				case DW_CFA_advance_loc4:
 					pos+=4;
+					if(pos>max)
+						return true;
 					break;
 
 				case DW_CFA_offset_extended:
@@ -798,6 +803,10 @@ bool eh_program_insn_t<ptrsize>::parse_insn(
 					if(eh_frame_util_t<ptrsize>::read_uleb128(uleb, pos, data, max))
 						return true;
 					pos+=uleb;	
+					if(pos>max)
+						return true;
+					if(pos>max)
+						return true;
 					break;
 				}
 				case DW_CFA_expression:
@@ -810,6 +819,8 @@ bool eh_program_insn_t<ptrsize>::parse_insn(
 					if(eh_frame_util_t<ptrsize>::read_uleb128(uleb2, pos, data, max))
 						return true;
 					pos+=uleb2;
+					if(pos>max)
+						return true;
 					break;
 				}
 				case DW_CFA_def_cfa_offset_sf:
