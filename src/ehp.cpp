@@ -244,7 +244,7 @@ bool eh_frame_util_t<ptrsize>::read_sleb128 (
 	do
 	{
 		if ( position > max )
-			return false;
+			return true;
 		byte = data [position]; 
 		result |= ((byte & 0x7f)<< shift);
 		shift += 7;
@@ -1384,23 +1384,24 @@ bool lsda_call_site_t<ptrsize>::parse_lcs(
 	const uint8_t cs_table_encoding, 
 	uint32_t &pos, 
 	const uint8_t* const data, 
-	const uint64_t max,  /* call site table max */
+	const uint64_t cs_max,  /* call site table max */
 	const uint64_t data_addr, 
 	const uint64_t landing_pad_base_addr,
 	const uint64_t gcc_except_table_max)
 {
+	const auto smallest_max = min(cs_max,gcc_except_table_max);
 	call_site_addr_position = pos + data_addr;
-	if(this->read_type_with_encoding(cs_table_encoding, call_site_offset, pos, data, max, data_addr))
+	if(this->read_type_with_encoding(cs_table_encoding, call_site_offset, pos, data, smallest_max, data_addr))
 		return true;
 	call_site_addr=landing_pad_base_addr+call_site_offset;
 	call_site_end_addr_position = pos + data_addr;
 
-	if(this->read_type_with_encoding(cs_table_encoding, call_site_length, pos, data, max, data_addr))
+	if(this->read_type_with_encoding(cs_table_encoding, call_site_length, pos, data, smallest_max, data_addr))
 		return true;
 	call_site_end_addr=call_site_addr+call_site_length;
 	landing_pad_addr_position = pos + data_addr;
 
-	if(this->read_type_with_encoding(cs_table_encoding, landing_pad_offset, pos, data, max, data_addr))
+	if(this->read_type_with_encoding(cs_table_encoding, landing_pad_offset, pos, data, smallest_max, data_addr))
 		return true;
 	landing_pad_addr_end_position = pos + data_addr;
 
@@ -1410,7 +1411,7 @@ bool lsda_call_site_t<ptrsize>::parse_lcs(
 	else
 		landing_pad_addr=landing_pad_base_addr+landing_pad_offset;
 
-	if(this->read_uleb128(action, pos, data, max))
+	if(this->read_uleb128(action, pos, data, smallest_max))
 		return true;
 
 	if(action == 0)
@@ -1426,7 +1427,7 @@ bool lsda_call_site_t<ptrsize>::parse_lcs(
 		while(!end)
 		{
 			lsda_call_site_action_t<ptrsize> lcsa;
-			if(lcsa.parse_lcsa(act_table_pos, data, gcc_except_table_max, end))
+			if(lcsa.parse_lcsa(act_table_pos, data, smallest_max, end))
 				return true;
 			action_table.push_back(lcsa);
 			
