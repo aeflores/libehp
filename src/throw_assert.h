@@ -1,6 +1,6 @@
 
 
-#define use_throw_assert
+#define use_throwing_assert
 
 #ifndef throw_asssert
 
