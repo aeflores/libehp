@@ -1,5 +1,9 @@
+// @HEADER_COMPONENT libehp
+// @HEADER_LANG C++
+// @HEADER_BEGIN
+
 /*
-   Copyright 2017-2018 University of Virginia
+   Copyright 2017-2019 University of Virginia
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -12,8 +16,9 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License.
-
 */
+
+// @HEADER_END
 
 #ifndef ehp_hpp
 #define ehp_hpp
