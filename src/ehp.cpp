@@ -1438,7 +1438,7 @@ bool lsda_call_site_t<ptrsize>::parse_lcs(
 		while(!end)
 		{
 			lsda_call_site_action_t<ptrsize> lcsa;
-			if(lcsa.parse_lcsa(act_table_pos, data, smallest_max, end))
+			if(lcsa.parse_lcsa(act_table_pos, data, gcc_except_table_max, end))	 /* expect action table after cs_max */
 				return true;
 			action_table.push_back(lcsa);
 			
