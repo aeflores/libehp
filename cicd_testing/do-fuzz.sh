@@ -33,14 +33,12 @@ function main()
 	echo "The report is: "
 	echo "$report" | tee fail_report.yaml
 
-
 	local declare crash_count=$(echo "$report"|shyaml get-value failing-input-count)
 
 	if [[ $crash_count == 0 ]]; then
 		echo "No crashes found"
 		exit 0
 	else
-		set -x 
 		# upload the report.
 		local proj_id=114
 		local upload_report=$(curl --request POST --header "PRIVATE-TOKEN: PXLgVFpgjmmugAiHTJzx " --form "file=@fail_report.yaml" https://git.zephyr-software.com/api/v4/projects/$proj_id/uploads)
@@ -49,8 +47,7 @@ function main()
 		local host=$(hostname)
 		local md=$(echo $upload_report | shyaml get-value markdown)
 		local desc=""
-		set +e # allow read to return non-zero as read does that on EOF
-		read -r -d '' desc << EOM
+		read -r -d '' desc || true << EOM
 Turbo automatically found $crash_count crashes!
 
 Host: $host
@@ -65,12 +62,11 @@ See [job details](https://git.zephyr-software.com/opensrc/libehp/-/jobs/$CI_JOB_
 and [pipeline details](https://git.zephyr-software.com/opensrc/libehp/pipelines/$CI_PIPELINE_ID).
 
 EOM
-		set -e
 		local title="Turbo found $crash_count bugs in libEHP on $date"
-
+		local assignee_id="$GITLAB_USER_ID"
 
 		# finally post an issue
-		curl --request POST --data-urlencode "description=$desc" --data-urlencode "title=$title" --header "PRIVATE-TOKEN: PXLgVFpgjmmugAiHTJzx " "https://git.zephyr-software.com//api/v4/projects/$proj_id/issues?&labels=bug,turbo&assignee_ids[]=3"
+		curl --request POST --data-urlencode "description=$desc" --data-urlencode "title=$title" --header "PRIVATE-TOKEN: PXLgVFpgjmmugAiHTJzx " "https://git.zephyr-software.com//api/v4/projects/$proj_id/issues?&labels=bug,turbo&assignee_ids[]=$assignee_id"
 
 		echo "$crash_count count crashes found!"
 		exit 1
