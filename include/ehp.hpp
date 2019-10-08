@@ -68,7 +68,7 @@ class EHProgram_t
 	EHProgram_t(const EHProgram_t&) {}
 	public:
 	virtual ~EHProgram_t() {}
-	virtual void print(const uint64_t start_addr, const int64_t caf) const =0;
+	virtual void print(const uint64_t start_addr, const int64_t caf) const = 0;
 	virtual const EHProgramInstructionVector_t* getInstructions()          const =0;
 };
 
