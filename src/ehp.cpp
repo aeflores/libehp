@@ -55,7 +55,7 @@ using namespace ELFIO;
 
 template <int ptrsize>
 template <class T> 
-bool eh_frame_util_t<ptrsize>::read_type(T &value, uint32_t &position, const uint8_t* const data, const uint32_t max)
+bool eh_frame_util_t<ptrsize>::read_type(T &value, uint32_t &position, const uint8_t* const data, const size_t max)
 {
 	if(position + sizeof(T) > max) return true;
 
@@ -76,7 +76,7 @@ bool eh_frame_util_t<ptrsize>::read_type_with_encoding
 	(const uint8_t encoding, T &value, 
 	uint32_t &position, 
 	const uint8_t* const data, 
-	const uint32_t max, 
+	const size_t max,
 	const uint64_t section_start_addr )
 {
 	auto orig_position=position;
@@ -198,7 +198,7 @@ bool eh_frame_util_t<ptrsize>::read_string
 	(string &s, 
 	uint32_t & position, 
 	const uint8_t* const data, 
-	const uint32_t max)
+	const size_t max)
 {
 	while(data[position]!='\0' && position < max)
 	{
@@ -217,7 +217,7 @@ bool eh_frame_util_t<ptrsize>::read_uleb128
 	( uint64_t &result, 
 	uint32_t& position, 
 	const uint8_t* const data, 
-	const uint32_t max)
+	const size_t max)
 {
 	result = 0;
 	auto shift = 0;
@@ -239,7 +239,7 @@ bool eh_frame_util_t<ptrsize>::read_sleb128 (
 	int64_t &result, 
 	uint32_t & position, 
 	const uint8_t* const data, 
-	const uint32_t max)
+	const size_t max)
 {
 	result = 0;
 	auto shift = 0;
@@ -268,7 +268,7 @@ bool eh_frame_util_t<ptrsize>::read_length(
 	uint64_t &act_length, 
 	uint32_t &position, 
 	const uint8_t* const data, 
-	const uint32_t max)
+	const size_t max)
 {
 	auto eh_frame_scoop_data=data;
 	auto length=uint32_t(0);
@@ -679,7 +679,7 @@ template <int ptrsize>
 void eh_program_insn_t<ptrsize>::print_uleb_operand(
 	uint32_t pos, 
 	const uint8_t* const data, 
-	const uint32_t max) 
+	const size_t max)
 {
 	auto uleb=uint64_t(0xdeadbeef);
 	eh_frame_util_t<ptrsize>::read_uleb128(uleb, pos, data, max);
@@ -690,7 +690,7 @@ template <int ptrsize>
 void eh_program_insn_t<ptrsize>::print_sleb_operand(
 	uint32_t pos, 
 	const uint8_t* const data, 
-	const uint32_t max) 
+	const size_t max)
 {
 	auto leb=int64_t(0xdeadbeef);
 	eh_frame_util_t<ptrsize>::read_sleb128(leb, pos, data, max);
@@ -806,7 +806,7 @@ bool eh_program_insn_t<ptrsize>::parse_insn(
 					auto uleb=uint64_t(0);
 					if(eh_frame_util_t<ptrsize>::read_uleb128(uleb, pos, data, max))
 						return true;
-					pos+=uleb;	
+					pos+=static_cast<uint32_t>(uleb);
 					if(pos>max)
 						return true;
 					if(pos>max)
@@ -822,7 +822,7 @@ bool eh_program_insn_t<ptrsize>::parse_insn(
 						return true;
 					if(eh_frame_util_t<ptrsize>::read_uleb128(uleb2, pos, data, max))
 						return true;
-					pos+=uleb2;
+					pos+=static_cast<uint32_t>(uleb2);
 					if(pos>max)
 						return true;
 					break;
@@ -1108,7 +1108,7 @@ template <int ptrsize>
 bool cie_contents_t<ptrsize>::parse_cie(
 	const uint32_t &cie_position, 
 	const uint8_t* const data, 
-	const uint32_t max, 
+	const size_t max,
 	const uint64_t eh_addr)
 {
 	auto &c=*this;
@@ -1205,7 +1205,7 @@ bool cie_contents_t<ptrsize>::parse_cie(
 		if(this->read_type(fde_encoding, position, eh_frame_scoop_data, max))
 			return true;
 	}
-	if(eh_pgm.parse_program(position, eh_frame_scoop_data, end_pos))
+	if(eh_pgm.parse_program(position, eh_frame_scoop_data, static_cast<uint32_t>(end_pos)))
 		return true;
 
 
@@ -1276,7 +1276,7 @@ bool lsda_call_site_action_t<ptrsize>::parse_lcsa(uint32_t& pos, const uint8_t* 
 	if(next_pos_offset==0)
 		end=true;
 	else
-		pos=next_action+next_pos_offset;
+		pos=static_cast<uint32_t>(next_action+next_pos_offset);
 	return false;
 }
 
@@ -1320,7 +1320,7 @@ bool lsda_type_table_entry_t<ptrsize>::parse(
 {
 	tt_encoding=p_tt_encoding;
 	const auto tt_encoding_sans_indirect = tt_encoding&(~DW_EH_PE_indirect);
-	const auto tt_encoding_sans_indir_sans_pcrel = tt_encoding_sans_indirect & (~DW_EH_PE_pcrel);
+	const uint8_t tt_encoding_sans_indir_sans_pcrel = tt_encoding_sans_indirect & (~DW_EH_PE_pcrel);
 	const auto has_pcrel = (tt_encoding & DW_EH_PE_pcrel) == DW_EH_PE_pcrel;
 	switch(tt_encoding & 0xf) // get just the size field
 	{
@@ -1338,8 +1338,9 @@ bool lsda_type_table_entry_t<ptrsize>::parse(
 		default:
 			throw_assert(0);
 	}
-	const auto orig_act_pos=uint32_t(tt_pos+(-index*tt_encoding_size));
-	auto act_pos=uint32_t(tt_pos+(-index*tt_encoding_size));
+	uint64_t negated_index = -static_cast<int64_t>(index);
+	const auto orig_act_pos=uint32_t(tt_pos+(negated_index*tt_encoding_size));
+	auto act_pos=uint32_t(tt_pos+(negated_index*tt_encoding_size));
 	if(this->read_type_with_encoding(tt_encoding_sans_indir_sans_pcrel, pointer_to_typeinfo, act_pos, data, max, data_addr))
 		return true;
 
@@ -1535,7 +1536,7 @@ bool lsda_t<ptrsize>::parse_lsda(
 	if(this->read_type(type_table_encoding, pos, (const uint8_t* const)data.data(), max))
 		return true;
 
-	auto type_table_pos=0;
+	auto type_table_pos=uint64_t(0);
 	if(type_table_encoding!=DW_EH_PE_omit)
 	{
 		type_table_addr_location = pos + data_addr;
@@ -1587,7 +1588,7 @@ bool lsda_t<ptrsize>::parse_lsda(
 			for(const auto act_tab_entry : cs_tab_entry.getActionTableInternal())
 			{
 				const auto type_filter=act_tab_entry.getAction();
-				const auto parse_and_insert_tt_entry = [&] (const unsigned long index) -> bool
+				const auto parse_and_insert_tt_entry = [&] (const uint64_t index) -> bool
 				{
 					// cout<<"Parsing TypeTable at -"<<index<<endl;
 					// 1-based indexing because of odd backwards indexing of type table.
@@ -1689,7 +1690,7 @@ bool fde_contents_t<ptrsize>::parse_fde(
 	const uint32_t &fde_position, 
 	const uint32_t &cie_position, 
 	const uint8_t* const data, 
-	const uint64_t max, 
+	const uint64_t max,
 	const uint64_t eh_addr,
 	const ScoopReplacement_t* gcc_except_scoop)
 //	const DataScoop_t* gcc_except_scoop)
@@ -1744,10 +1745,10 @@ bool fde_contents_t<ptrsize>::parse_fde(
 				return true;
 	}
 
-	if(c.eh_pgm.parse_program(pos, eh_frame_scoop_data, end_pos))
+	if(c.eh_pgm.parse_program(pos, eh_frame_scoop_data, static_cast<uint32_t>(end_pos)))
 		return true;
 
-	c.fde_position = fde_position + eh_addr;
+	c.fde_position = fde_position + static_cast<uint32_t>(eh_addr);
 	c.cie_position=cie_position;
 	c.length=length;
 	c.id=id;
@@ -1848,7 +1849,7 @@ bool split_eh_frame_impl_t<ptrsize>::iterate_fdes()
 
 		// next CIE/FDE
 		throw_assert(position<=next_position); 	// so we don't accidentally over-read a CIE/FDE
-		position=next_position;
+		position=static_cast<uint32_t>(next_position);
 	}
 	return false;
 }

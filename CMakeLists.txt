@@ -27,7 +27,12 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # Base include path for ehp
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 
-add_compile_options(-Werror)
+if (${CMAKE_CXX_COMPILER_ID} STREQUAL MSVC)
+  add_compile_options(/WX)
+else()
+  add_compile_options(-Werror)
+endif()
+
 add_compile_options(-fPIC)
 add_subdirectory(src)
 
