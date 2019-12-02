@@ -15,7 +15,9 @@ function main()
 	# force reinstall tools so we are always up-to-date
 	yes | sudo bash -c "$(curl -fsSL allzp.zephyr-software.io/turbo/cli-install.sh)"
 
-	docker run -d --restart unless-stopped -p 55155:55155 git.zephyr-software.com:4567/allzp/turbo/turbo:latest
+
+	# docker run starts a container.  since we started with --restart, it should come back up
+	# docker run -d --restart unless-stopped -p 55155:55155 git.zephyr-software.com:4567/allzp/turbo/turbo:latest
 
 	# better done with boost add -q -i 
 	turbo-cli boost add libehp || true
