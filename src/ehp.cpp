@@ -83,12 +83,10 @@ bool eh_frame_util_t<ptrsize>::read_type_with_encoding
 	auto encoding_lower8=encoding&0xf;
 	auto encoding_upper8=encoding&0xf0;
 	value=0;
+	if(encoding == DW_EH_PE_omit)
+		return true;
 	switch(encoding_lower8)
 	{
-		case DW_EH_PE_omit  :
-			return true;
-
-
 		case DW_EH_PE_uleb128:
 		{
 			auto newval=uint64_t(0);
