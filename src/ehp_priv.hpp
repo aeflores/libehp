@@ -49,41 +49,41 @@ class eh_frame_util_t
 {
 	public: 
 	template <class T> 
-	static bool read_type(T &value, uint32_t &position, const uint8_t* const data, const uint32_t max);
+	static bool read_type(T &value, uint64_t &position, const uint8_t* const data, const size_t max);
 	template <class T> 
 	static bool read_type_with_encoding
 		(const uint8_t encoding, T &value, 
-		uint32_t &position, 
+		uint64_t &position,
 		const uint8_t* const data, 
-		const uint32_t max, 
+		const size_t max,
 		const uint64_t section_start_addr );
 
 	static bool read_string 
 		(string &s, 
-		uint32_t & position, 
+		uint64_t &position,
 		const uint8_t* const data, 
-		const uint32_t max);
+		const size_t max);
 
 
 	// see https://en.wikipedia.org/wiki/LEB128
 	static bool read_uleb128 
 		( uint64_t &result, 
-		uint32_t& position, 
+		uint64_t &position,
 		const uint8_t* const data, 
-		const uint32_t max);
+		const size_t max);
 
 	// see https://en.wikipedia.org/wiki/LEB128
 	static bool read_sleb128 ( 
 		int64_t &result, 
-		uint32_t & position, 
+		uint64_t &position,
 		const uint8_t* const data, 
-		const uint32_t max);
+		const size_t max);
 	
 	static bool read_length(
 		uint64_t &act_length, 
-		uint32_t &position, 
+		uint64_t &position,
 		const uint8_t* const data, 
-		const uint32_t max);
+		const size_t max);
 };
 
 template <int ptrsize>
@@ -100,20 +100,20 @@ class eh_program_insn_t  : public EHProgramInstruction_t
 	void push_byte(uint8_t c) ;
 
 	static void print_uleb_operand(
-		uint32_t pos, 
+		uint64_t pos,
 		const uint8_t* const data, 
-		const uint32_t max) ;
+		const size_t max) ;
 
 	static void print_sleb_operand(
-		uint32_t pos, 
+		uint64_t pos,
 		const uint8_t* const data, 
-		const uint32_t max) ;
+		const size_t max) ;
 
 	bool parse_insn(
 		uint8_t opcode, 
-		uint32_t& pos, 
+		uint64_t &pos,
 		const uint8_t* const data, 
-		const uint32_t &max);
+		const uint64_t &max);
 
 	bool isNop() const ;
 	bool isDefCFAOffset() const ;
@@ -142,9 +142,9 @@ class eh_program_t : public EHProgram_t
 	void print(const uint64_t start_addr, const int64_t caf) const;
 
 	bool parse_program(
-		const uint32_t& program_start_position, 
+		const uint64_t& program_start_position,
 		const uint8_t* const data, 
-		const uint32_t &max_program_pos);
+		const uint64_t &max_program_pos);
         virtual const EHProgramInstructionVector_t* getInstructions() const ;
 	vector<eh_program_insn_t <ptrsize> >& getInstructionsInternal() ;
 	const vector<eh_program_insn_t <ptrsize> >& getInstructionsInternal() const ;
@@ -198,9 +198,9 @@ class cie_contents_t : public CIEContents_t, private eh_frame_util_t<ptrsize>
 	uint8_t getFDEEncoding() const ;
 
 	bool parse_cie(
-		const uint32_t &cie_position, 
+		const uint64_t &cie_position,
 		const uint8_t* const data, 
-		const uint32_t max, 
+		const size_t max,
 		const uint64_t eh_addr);
 	void print(const uint64_t startAddr) const ;
 };
@@ -215,7 +215,7 @@ class lsda_call_site_action_t : public LSDACallSiteAction_t, private eh_frame_ut
 	lsda_call_site_action_t() ;
 	int64_t getAction() const ;
 
-	bool parse_lcsa(uint32_t& pos, const uint8_t* const data, const uint64_t max, bool &end);
+	bool parse_lcsa(uint64_t &pos, const uint8_t* const data, const uint64_t max, bool &end);
 	void print() const;
 };
 
@@ -239,7 +239,7 @@ class lsda_type_table_entry_t: public LSDATypeTableEntry_t, private eh_frame_uti
 
 	bool parse(
 		const uint64_t p_tt_encoding, 	
-		const uint64_t tt_pos, 	
+		const uint64_t tt_pos,
 		const uint64_t index,
 		const uint8_t* const data, 
 		const uint64_t max,  
@@ -290,7 +290,7 @@ class lsda_call_site_t : public LSDACallSite_t, private eh_frame_util_t<ptrsize>
 		const uint64_t action_table_start_addr, 	
 		const uint64_t cs_table_start_addr, 	
 		const uint8_t cs_table_encoding, 
-		uint32_t &pos, 
+		uint64_t &pos,
 		const uint8_t* const data, 
 		const uint64_t max,  /* call site table max */
 		const uint64_t data_addr, 
@@ -367,8 +367,8 @@ class lsda_t : public LSDA_t, private eh_frame_util_t<ptrsize>
 template <int ptrsize>
 class fde_contents_t : public FDEContents_t, eh_frame_util_t<ptrsize> 
 {
-	uint32_t fde_position;
-	uint32_t cie_position;
+	uint64_t fde_position;
+	uint64_t cie_position;
 	uint64_t length;
 	uint8_t id;
 	uint64_t fde_start_addr;
@@ -417,10 +417,10 @@ class fde_contents_t : public FDEContents_t, eh_frame_util_t<ptrsize>
 	uint64_t getLSDAAddressSize() const { return fde_lsda_addr_size; }
 
 	bool parse_fde(
-		const uint32_t &fde_position, 
-		const uint32_t &cie_position, 
+		const uint64_t &fde_position,
+		const uint64_t &cie_position,
 		const uint8_t* const data, 
-		const uint64_t max, 
+		const uint64_t max,
 		const uint64_t eh_addr,
 		const ScoopReplacement_t *gcc_except_scoop);
 
