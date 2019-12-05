@@ -49,20 +49,20 @@ class eh_frame_util_t
 {
 	public: 
 	template <class T> 
-	static bool read_type(T &value, uint64_t &position, const uint8_t* const data, const size_t max);
+	static bool read_type(T &value, uint64_t &position, const uint8_t* const data, const uint64_t max);
 	template <class T> 
 	static bool read_type_with_encoding
 		(const uint8_t encoding, T &value, 
 		uint64_t &position,
 		const uint8_t* const data, 
-		const size_t max,
+		const uint64_t max,
 		const uint64_t section_start_addr );
 
 	static bool read_string 
 		(string &s, 
 		uint64_t &position,
 		const uint8_t* const data, 
-		const size_t max);
+		const uint64_t max);
 
 
 	// see https://en.wikipedia.org/wiki/LEB128
@@ -70,20 +70,20 @@ class eh_frame_util_t
 		( uint64_t &result, 
 		uint64_t &position,
 		const uint8_t* const data, 
-		const size_t max);
+		const uint64_t max);
 
 	// see https://en.wikipedia.org/wiki/LEB128
 	static bool read_sleb128 ( 
 		int64_t &result, 
 		uint64_t &position,
 		const uint8_t* const data, 
-		const size_t max);
+		const uint64_t max);
 	
 	static bool read_length(
 		uint64_t &act_length, 
 		uint64_t &position,
 		const uint8_t* const data, 
-		const size_t max);
+		const uint64_t max);
 };
 
 template <int ptrsize>
@@ -102,12 +102,12 @@ class eh_program_insn_t  : public EHProgramInstruction_t
 	static void print_uleb_operand(
 		uint64_t pos,
 		const uint8_t* const data, 
-		const size_t max) ;
+		const uint64_t max) ;
 
 	static void print_sleb_operand(
 		uint64_t pos,
 		const uint8_t* const data, 
-		const size_t max) ;
+		const uint64_t max) ;
 
 	bool parse_insn(
 		uint8_t opcode, 
@@ -200,7 +200,7 @@ class cie_contents_t : public CIEContents_t, private eh_frame_util_t<ptrsize>
 	bool parse_cie(
 		const uint64_t &cie_position,
 		const uint8_t* const data, 
-		const size_t max,
+		const uint64_t max,
 		const uint64_t eh_addr);
 	void print(const uint64_t startAddr) const ;
 };
