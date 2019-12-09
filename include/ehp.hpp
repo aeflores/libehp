@@ -20,6 +20,8 @@
 
 // @HEADER_END
 
+// comment
+
 #ifndef ehp_hpp
 #define ehp_hpp
 
