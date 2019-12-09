@@ -54,17 +54,43 @@ using namespace ELFIO;
 
 template <int ptrsize>
 template <class T> 
-bool eh_frame_util_t<ptrsize>::read_type(T &value, uint64_t &position, const uint8_t* const data, const uint64_t max)
+bool eh_frame_util_t<ptrsize>::read_type(T &value, uint64_t &position, const uint8_t* const data, const uint64_t max, const bool is_be)
 {
 	if(position + sizeof(T) > max) return true;
 
 	
 	// typecast to the right type
-	auto ptr=(const T*)&data[position];
+	const auto ptr=reinterpret_cast<const T*>(&data[position]);
 
 	// set output parameters
 	position+=sizeof(T);
 	value=*ptr;
+
+	switch(sizeof(T))
+	{
+		case 1:
+			break;
+		case 2:
+			if(is_be)
+				value=be16toh(value);
+			else
+				value=le16toh(value);
+			break;
+		case 4:
+			if(is_be)
+				value=be32toh(value);
+			else
+				value=le32toh(value);
+			break;
+		case 8:
+			if(is_be)
+				value=be64toh(value);
+			else
+				value=le64toh(value);
+			break;
+		default:
+			throw invalid_argument("Unknown integer size");
+	}
 
 	return false;
 	
@@ -76,7 +102,8 @@ bool eh_frame_util_t<ptrsize>::read_type_with_encoding
 	uint64_t &position,
 	const uint8_t* const data, 
 	const uint64_t max,
-	const uint64_t section_start_addr )
+	const uint64_t section_start_addr, 
+        const bool is_be)
 {
 	auto orig_position=position;
 	auto encoding_lower8=encoding&0xf;
@@ -105,7 +132,7 @@ bool eh_frame_util_t<ptrsize>::read_type_with_encoding
 		case DW_EH_PE_udata2 :
 		{
 			auto newval=uint16_t(0);
-			if(eh_frame_util_t<ptrsize>::read_type(newval,position,data,max))
+			if(eh_frame_util_t<ptrsize>::read_type(newval,position,data,max, is_be))
 				return true;
 			value=newval;
 			break;
@@ -113,7 +140,7 @@ bool eh_frame_util_t<ptrsize>::read_type_with_encoding
 		case DW_EH_PE_udata4 :
 		{
 			auto newval=uint32_t(0);
-			if(eh_frame_util_t<ptrsize>::read_type(newval,position,data,max))
+			if(eh_frame_util_t<ptrsize>::read_type(newval,position,data,max, is_be))
 				return true;
 			value=newval;
 			break;
@@ -121,7 +148,7 @@ bool eh_frame_util_t<ptrsize>::read_type_with_encoding
 		case DW_EH_PE_udata8 :
 		{
 			auto newval=uint64_t(0);
-			if(eh_frame_util_t<ptrsize>::read_type(newval,position,data,max))
+			if(eh_frame_util_t<ptrsize>::read_type(newval,position,data,max, is_be))
 				return true;
 			value=newval;
 			break;
@@ -130,23 +157,23 @@ bool eh_frame_util_t<ptrsize>::read_type_with_encoding
 		{
 			if(ptrsize==8)
 			{
-				if(eh_frame_util_t<ptrsize>::read_type_with_encoding(DW_EH_PE_udata8, value, position, data, max, section_start_addr))
+				if(eh_frame_util_t<ptrsize>::read_type_with_encoding(DW_EH_PE_udata8, value, position, data, max, section_start_addr, is_be))
 					return true;
-				break;
 			}
 			else if(ptrsize==4)
 			{
-				if(eh_frame_util_t<ptrsize>::read_type_with_encoding(DW_EH_PE_udata4, value, position, data, max, section_start_addr))
+				if(eh_frame_util_t<ptrsize>::read_type_with_encoding(DW_EH_PE_udata4, value, position, data, max, section_start_addr, is_be))
 					return true;
-				break;
 			}
-			throw_assert(0);
+			else
+				throw invalid_argument("Cannot detect pointer size");
+			break;
 				
 		}
 		case DW_EH_PE_sdata2 :
 		{
 			auto newval=int16_t(0);
-			if(eh_frame_util_t<ptrsize>::read_type(newval,position,data,max))
+			if(eh_frame_util_t<ptrsize>::read_type(newval,position,data,max, is_be))
 				return true;
 			value=newval;
 			break;
@@ -154,7 +181,7 @@ bool eh_frame_util_t<ptrsize>::read_type_with_encoding
 		case DW_EH_PE_sdata4 :
 		{
 			auto newval=int32_t(0);
-			if(eh_frame_util_t<ptrsize>::read_type(newval,position,data,max))
+			if(eh_frame_util_t<ptrsize>::read_type(newval,position,data,max, is_be))
 				return true;
 			value=newval;
 			break;
@@ -162,7 +189,7 @@ bool eh_frame_util_t<ptrsize>::read_type_with_encoding
 		case DW_EH_PE_sdata8 :
 		{
 			auto newval=int64_t(0);
-			if(read_type(newval,position,data,max))
+			if(read_type(newval,position,data,max, is_be))
 				return true;
 			value=newval;
 			break;
@@ -170,7 +197,7 @@ bool eh_frame_util_t<ptrsize>::read_type_with_encoding
 
 		case DW_EH_PE_signed :
 		default:
-			throw_assert(0);
+			throw invalid_argument("Cannot detect encoding of requested value");
 	};
 
 	switch(encoding_upper8)
@@ -186,7 +213,7 @@ bool eh_frame_util_t<ptrsize>::read_type_with_encoding
 		case DW_EH_PE_aligned:
 		case DW_EH_PE_indirect:
 		default:
-			throw_assert(0);
+			throw invalid_argument("Cannot detect encoding of requested value");
 			return true;
 	}
 	return false;
@@ -267,17 +294,19 @@ bool eh_frame_util_t<ptrsize>::read_length(
 	uint64_t &act_length, 
 	uint64_t &position,
 	const uint8_t* const data, 
-	const uint64_t max)
+	const uint64_t max,
+	const bool is_be
+	)
 {
 	auto eh_frame_scoop_data=data;
 	auto length=uint32_t(0);
 	auto length_64bit=uint64_t(0);
-	if(read_type(length,position, eh_frame_scoop_data, max))
+	if(read_type(length,position, eh_frame_scoop_data, max, is_be))
 		return true;
 
 	if(length==0xffffffff)
 	{
-		if(read_type(length_64bit,position, eh_frame_scoop_data, max))
+		if(read_type(length_64bit,position, eh_frame_scoop_data, max, is_be))
 			return true;
 		act_length=length_64bit;
 	}
@@ -701,7 +730,9 @@ bool eh_program_insn_t<ptrsize>::parse_insn(
 	uint8_t opcode, 
 	uint64_t &pos,
 	const uint8_t* const data, 
-	const uint64_t &max)
+	const uint64_t &max, 
+	const bool is_be
+	)
 {
 	auto &eh_insn = *this;
 	auto insn_start=pos-1;
@@ -1026,7 +1057,9 @@ template <int ptrsize>
 bool eh_program_t<ptrsize>::parse_program(
 	const uint64_t& program_start_position,
 	const uint8_t* const data, 
-	const uint64_t &max_program_pos)
+	const uint64_t &max_program_pos,
+	const bool is_be
+	)
 {
 	eh_program_t &eh_pgm=*this;
 	auto max=max_program_pos;
@@ -1034,15 +1067,13 @@ bool eh_program_t<ptrsize>::parse_program(
 	while(pos < max_program_pos)
 	{
 		auto opcode=uint8_t(0);
-		if(eh_frame_util_t<ptrsize>::read_type(opcode,pos,data,max))
+		if(eh_frame_util_t<ptrsize>::read_type(opcode,pos,data,max, is_be))
 			return true;
 		eh_program_insn_t<ptrsize> eh_insn;
-		if(eh_insn.parse_insn(opcode,pos,data,max))
+		if(eh_insn.parse_insn(opcode,pos,data,max, is_be))
 			return true;
 
 		eh_pgm.push_insn(eh_insn);
-
-	
 	}
 
 	return false;
@@ -1108,24 +1139,25 @@ bool cie_contents_t<ptrsize>::parse_cie(
 	const uint64_t &cie_position,
 	const uint8_t* const data, 
 	const uint64_t max,
-	const uint64_t eh_addr)
+	const uint64_t eh_addr, 
+	const bool is_be)
 {
 	auto &c=*this;
 	const auto eh_frame_scoop_data= data;
 	auto position=cie_position;
 	auto length= uint64_t(0);
 
-	if(this->read_length(length, position, eh_frame_scoop_data, max))
+	if(this->read_length(length, position, eh_frame_scoop_data, max, is_be))
 		return true;
 
 	auto end_pos=position+length;
 
 	auto cie_id=uint32_t(0);
-	if(this->read_type(cie_id, position, eh_frame_scoop_data, max))
+	if(this->read_type(cie_id, position, eh_frame_scoop_data, max, is_be))
 		return true;
 
 	auto cie_version=uint8_t(0);
-	if(this->read_type(cie_version, position, eh_frame_scoop_data, max))
+	if(this->read_type(cie_version, position, eh_frame_scoop_data, max, is_be))
 		return true;
 
 	if(cie_version==1) 
@@ -1153,7 +1185,7 @@ bool cie_contents_t<ptrsize>::parse_cie(
 	if(cie_version==1)
 	{
 		auto return_address_register_column_8=uint8_t(0);
-		if(this->read_type(return_address_register_column_8, position, eh_frame_scoop_data, max))
+		if(this->read_type(return_address_register_column_8, position, eh_frame_scoop_data, max, is_be))
 			return true;
 		return_address_register_column=return_address_register_column_8;
 	}
@@ -1179,7 +1211,7 @@ bool cie_contents_t<ptrsize>::parse_cie(
 	auto personality_pointer_size=uint64_t(0);
 	if(augmentation.find("P") != string::npos)
 	{
-		if(this->read_type(personality_encoding, position, eh_frame_scoop_data, max))
+		if(this->read_type(personality_encoding, position, eh_frame_scoop_data, max, is_be))
 			return true;
 		personality_pointer_position=position;
 
@@ -1187,7 +1219,7 @@ bool cie_contents_t<ptrsize>::parse_cie(
 		// we just need to record what's in the CIE, regardless of whether it's the actual
 		// personality routine or it's the pointer to the personality routine.
 		auto personality_encoding_sans_indirect = personality_encoding&(~DW_EH_PE_indirect);
-		if(this->read_type_with_encoding(personality_encoding_sans_indirect, personality, position, eh_frame_scoop_data, max, eh_addr))
+		if(this->read_type_with_encoding(personality_encoding_sans_indirect, personality, position, eh_frame_scoop_data, max, eh_addr, is_be))
 			return true;
 		personality_pointer_size=position - personality_pointer_position;
 	}
@@ -1195,16 +1227,16 @@ bool cie_contents_t<ptrsize>::parse_cie(
 	auto lsda_encoding=uint8_t(DW_EH_PE_omit);
 	if(augmentation.find("L") != string::npos)
 	{
-		if(this->read_type(lsda_encoding, position, eh_frame_scoop_data, max))
+		if(this->read_type(lsda_encoding, position, eh_frame_scoop_data, max, is_be))
 			return true;
 	}
 	auto fde_encoding=uint8_t(DW_EH_PE_omit);
 	if(augmentation.find("R") != string::npos)
 	{
-		if(this->read_type(fde_encoding, position, eh_frame_scoop_data, max))
+		if(this->read_type(fde_encoding, position, eh_frame_scoop_data, max, is_be))
 			return true;
 	}
-	if(eh_pgm.parse_program(position, eh_frame_scoop_data, end_pos))
+	if(eh_pgm.parse_program(position, eh_frame_scoop_data, end_pos, is_be))
 		return true;
 
 
@@ -1261,7 +1293,7 @@ int64_t lsda_call_site_action_t<ptrsize>::getAction() const { return action;}
 
 
 template <int ptrsize>
-bool lsda_call_site_action_t<ptrsize>::parse_lcsa(uint64_t &pos, const uint8_t* const data, const uint64_t max, bool &end)
+bool lsda_call_site_action_t<ptrsize>::parse_lcsa(uint64_t &pos, const uint8_t* const data, const uint64_t max, bool &end, const bool is_be)
 {
 	end=false;
 	if(this->read_sleb128(action, pos, data, max))
@@ -1314,7 +1346,8 @@ bool lsda_type_table_entry_t<ptrsize>::parse(
 	const uint64_t index,
 	const uint8_t* const data, 
 	const uint64_t max,  
-	const uint64_t data_addr
+	const uint64_t data_addr,
+	const bool is_be
 	)
 {
 	tt_encoding=p_tt_encoding;
@@ -1339,7 +1372,7 @@ bool lsda_type_table_entry_t<ptrsize>::parse(
 	}
 	const auto orig_act_pos=uint64_t(tt_pos+(-static_cast<int64_t>(index)*tt_encoding_size));
 	auto act_pos=uint64_t(tt_pos+(-static_cast<int64_t>(index)*tt_encoding_size));
-	if(this->read_type_with_encoding(tt_encoding_sans_indir_sans_pcrel, pointer_to_typeinfo, act_pos, data, max, data_addr))
+	if(this->read_type_with_encoding(tt_encoding_sans_indir_sans_pcrel, pointer_to_typeinfo, act_pos, data, max, data_addr, is_be))
 		return true;
 
 	// check if there's a 0 in the field
@@ -1380,12 +1413,6 @@ const LSDACallSiteActionVector_t* lsda_call_site_t<ptrsize>::getActionTable() co
 		transform(ALLOF(action_table), back_inserter(action_table_cache), [](const lsda_call_site_action_t<ptrsize> &a) { return &a;});
 	}
 	return &action_table_cache;
-#if 0
-	auto ret=shared_ptr<LSDACallSiteActionVector_t>(new LSDACallSiteActionVector_t());
-	transform(ALLOF(action_table), back_inserter(*ret), 
-		[](const lsda_call_site_action_t<ptrsize> &a) { return shared_ptr<LSDACallSiteAction_t>(new lsda_call_site_action_t<ptrsize>(a));});
-	return shared_ptr<LSDACallSiteActionVector_t>(ret);
-#endif
 }
 
 
@@ -1401,21 +1428,23 @@ bool lsda_call_site_t<ptrsize>::parse_lcs(
 	const uint64_t cs_max,  /* call site table max */
 	const uint64_t data_addr, 
 	const uint64_t landing_pad_base_addr,
-	const uint64_t gcc_except_table_max)
+	const uint64_t gcc_except_table_max,
+	const bool is_be
+	)
 {
 	const auto smallest_max = min(cs_max,gcc_except_table_max);
 	call_site_addr_position = pos + data_addr;
-	if(this->read_type_with_encoding(cs_table_encoding, call_site_offset, pos, data, smallest_max, data_addr))
+	if(this->read_type_with_encoding(cs_table_encoding, call_site_offset, pos, data, smallest_max, data_addr, is_be))
 		return true;
 	call_site_addr=landing_pad_base_addr+call_site_offset;
 	call_site_end_addr_position = pos + data_addr;
 
-	if(this->read_type_with_encoding(cs_table_encoding, call_site_length, pos, data, smallest_max, data_addr))
+	if(this->read_type_with_encoding(cs_table_encoding, call_site_length, pos, data, smallest_max, data_addr, is_be))
 		return true;
 	call_site_end_addr=call_site_addr+call_site_length;
 	landing_pad_addr_position = pos + data_addr;
 
-	if(this->read_type_with_encoding(cs_table_encoding, landing_pad_offset, pos, data, smallest_max, data_addr))
+	if(this->read_type_with_encoding(cs_table_encoding, landing_pad_offset, pos, data, smallest_max, data_addr, is_be))
 		return true;
 	landing_pad_addr_end_position = pos + data_addr;
 
@@ -1441,7 +1470,7 @@ bool lsda_call_site_t<ptrsize>::parse_lcs(
 		while(!end)
 		{
 			lsda_call_site_action_t<ptrsize> lcsa;
-			if(lcsa.parse_lcsa(act_table_pos, data, gcc_except_table_max, end))	 /* expect action table after cs_max */
+			if(lcsa.parse_lcsa(act_table_pos, data, gcc_except_table_max, end, is_be))  /* expect action table after cs_max */
 				return true;
 			action_table.push_back(lcsa);
 			
@@ -1504,7 +1533,8 @@ bool lsda_t<ptrsize>::parse_lsda(
                                  const uint64_t lsda_addr, 
                                  //const DataScoop_t* gcc_except_scoop, 
                                  const ScoopReplacement_t *gcc_except_scoop, 
-                                 const uint64_t fde_region_start
+                                 const uint64_t fde_region_start,
+				 const bool is_be
                                 )
 {
 	// make sure there's a scoop and that we're in the range.
@@ -1521,17 +1551,17 @@ bool lsda_t<ptrsize>::parse_lsda(
 	auto pos=uint64_t(lsda_addr-data_addr);
 	auto start_pos=pos;
 
-	if(this->read_type(landing_pad_base_encoding, pos, (const uint8_t* const)data.data(), max))
+	if(this->read_type(landing_pad_base_encoding, pos, (const uint8_t* const)data.data(), max, is_be))
 		return true;
 	if(landing_pad_base_encoding!=DW_EH_PE_omit)
 	{
-		if(this->read_type_with_encoding(landing_pad_base_encoding,landing_pad_base_addr, pos, (const uint8_t* const)data.data(), max, data_addr))
+		if(this->read_type_with_encoding(landing_pad_base_encoding,landing_pad_base_addr, pos, (const uint8_t* const)data.data(), max, data_addr, is_be))
 			return true;
 	}
 	else
 		landing_pad_base_addr=fde_region_start;
 
-	if(this->read_type(type_table_encoding, pos, (const uint8_t* const)data.data(), max))
+	if(this->read_type(type_table_encoding, pos, (const uint8_t* const)data.data(), max, is_be))
 		return true;
 
 	auto type_table_pos=uint64_t(0);
@@ -1549,7 +1579,7 @@ bool lsda_t<ptrsize>::parse_lsda(
 		type_table_addr_location=0;
 	}
 
-	if(this->read_type(cs_table_encoding, pos, (const uint8_t* const)data.data(), max))
+	if(this->read_type(cs_table_encoding, pos, (const uint8_t* const)data.data(), max, is_be))
 		return true;
 
 	cs_table_start_addr_location = pos + data_addr;
@@ -1567,8 +1597,18 @@ bool lsda_t<ptrsize>::parse_lsda(
 	while(1)
 	{
 		lsda_call_site_t<ptrsize> lcs;
-		if(lcs.parse_lcs(action_table_start_addr,
-			cs_table_start_addr,cs_table_encoding, pos, (const uint8_t* const)data.data(), cs_table_end, data_addr, landing_pad_base_addr, max))
+		if(lcs.parse_lcs(
+			action_table_start_addr,
+			cs_table_start_addr,
+			cs_table_encoding, 
+			pos, 
+			reinterpret_cast<const uint8_t* const>(data.data()), 
+			cs_table_end, data_addr, 
+			landing_pad_base_addr, 
+			max, 
+			is_be
+			)
+		  )
 		{
 			return true;
 		}
@@ -1591,7 +1631,7 @@ bool lsda_t<ptrsize>::parse_lsda(
 					// cout<<"Parsing TypeTable at -"<<index<<endl;
 					// 1-based indexing because of odd backwards indexing of type table.
 					lsda_type_table_entry_t <ptrsize> ltte;
-					if(ltte.parse(type_table_encoding, type_table_pos, index, (const uint8_t* const)data.data(), max, data_addr ))
+					if(ltte.parse(type_table_encoding, type_table_pos, index, (const uint8_t* const)data.data(), max, data_addr, is_be ))
 						return true;
 					type_table.resize(std::max((size_t)index,(size_t)type_table.size()));
 					type_table.at(index-1)=ltte;
@@ -1690,18 +1730,19 @@ bool fde_contents_t<ptrsize>::parse_fde(
 	const uint8_t* const data, 
 	const uint64_t max,
 	const uint64_t eh_addr,
-	const ScoopReplacement_t* gcc_except_scoop)
-//	const DataScoop_t* gcc_except_scoop)
+	const ScoopReplacement_t* gcc_except_scoop,
+	const bool is_be
+	)
 {
 	auto &c=*this;
 	const auto eh_frame_scoop_data=data;
 
-	if(cie_info.parse_cie(cie_position, data, max, eh_addr))
+	if(cie_info.parse_cie(cie_position, data, max, eh_addr, is_be))
 		return true;
 
 	auto pos=fde_position;
 	auto length=uint64_t(0);
-	if(this->read_length(length, pos, eh_frame_scoop_data, max))
+	if(this->read_length(length, pos, eh_frame_scoop_data, max, is_be))
 		return true;
 
 
@@ -1709,17 +1750,17 @@ bool fde_contents_t<ptrsize>::parse_fde(
 	//auto end_length_position=pos;
 
 	auto cie_id=uint32_t(0);
-	if(this->read_type(cie_id, pos, eh_frame_scoop_data, max))
+	if(this->read_type(cie_id, pos, eh_frame_scoop_data, max, is_be))
 		return true;
 
 	auto fde_start_addr=uint64_t(0);
 	auto fde_start_addr_position = pos;
-	if(this->read_type_with_encoding(c.getCIE().getFDEEncoding(),fde_start_addr, pos, eh_frame_scoop_data, max, eh_addr))
+	if(this->read_type_with_encoding(c.getCIE().getFDEEncoding(),fde_start_addr, pos, eh_frame_scoop_data, max, eh_addr, is_be))
 		return true;
 
 	auto fde_range_len=uint64_t(0);
 	auto fde_end_addr_position = pos;
-	if(this->read_type_with_encoding(c.getCIE().getFDEEncoding() & 0xf /* drop pc-rel bits */,fde_range_len, pos, eh_frame_scoop_data, max, eh_addr))
+	if(this->read_type_with_encoding(c.getCIE().getFDEEncoding() & 0xf /* drop pc-rel bits */,fde_range_len, pos, eh_frame_scoop_data, max, eh_addr, is_be))
 		return true;
 
 	auto fde_end_addr=fde_start_addr+fde_range_len;
@@ -1735,15 +1776,15 @@ bool fde_contents_t<ptrsize>::parse_fde(
 	auto fde_lsda_addr_size = uint64_t(0);
 	if(c.getCIE().getLSDAEncoding()!= DW_EH_PE_omit)
 	{
-		if(this->read_type_with_encoding(c.getCIE().getLSDAEncoding(), lsda_addr, pos, eh_frame_scoop_data, max, eh_addr))
+		if(this->read_type_with_encoding(c.getCIE().getLSDAEncoding(), lsda_addr, pos, eh_frame_scoop_data, max, eh_addr, is_be))
 			return true;
 		fde_lsda_addr_size = pos - fde_lsda_addr_position;
 		if(lsda_addr!=0)
-			if(c.lsda.parse_lsda(lsda_addr,gcc_except_scoop, fde_start_addr))
+			if(c.lsda.parse_lsda(lsda_addr,gcc_except_scoop, fde_start_addr, is_be))
 				return true;
 	}
 
-	if(c.eh_pgm.parse_program(pos, eh_frame_scoop_data, end_pos))
+	if(c.eh_pgm.parse_program(pos, eh_frame_scoop_data, end_pos, is_be))
 		return true;
 
 	c.fde_position = fde_position + eh_addr;
@@ -1788,7 +1829,7 @@ void fde_contents_t<ptrsize>::print() const
 
 
 template <int ptrsize>
-bool split_eh_frame_impl_t<ptrsize>::iterate_fdes()
+bool split_eh_frame_impl_t<ptrsize>::iterate_fdes(const bool is_be)
 {
 	auto eh_frame_scoop_str=eh_frame_scoop->getContents();
 	auto eh_frame_scoop_data=(const uint8_t* const)eh_frame_scoop_str.c_str();
@@ -1803,7 +1844,7 @@ bool split_eh_frame_impl_t<ptrsize>::iterate_fdes()
 		auto old_position=position;
 		auto act_length=uint64_t(0);
 
-		if(eh_frame_util_t<ptrsize>::read_length(act_length, position, eh_frame_scoop_data, max))
+		if(eh_frame_util_t<ptrsize>::read_length(act_length, position, eh_frame_scoop_data, max, is_be))
 			break;
 
 		// length field has to be meaningful, 0 or -1 indicates end of segment
@@ -1815,7 +1856,7 @@ bool split_eh_frame_impl_t<ptrsize>::iterate_fdes()
 		auto cie_offset=uint32_t(0);
 		auto cie_offset_position=position;
 
-		if(eh_frame_util_t<ptrsize>::read_type(cie_offset,position, eh_frame_scoop_data, max))
+		if(eh_frame_util_t<ptrsize>::read_type(cie_offset,position, eh_frame_scoop_data, max, is_be))
 			break;
 
 		//cout << " [ " << setw(6) << hex << old_position << "] " ;
@@ -1828,7 +1869,7 @@ bool split_eh_frame_impl_t<ptrsize>::iterate_fdes()
 		{
 			//cout << "CIE length="<< dec << act_length << endl;
 			cie_contents_t<ptrsize> c;
-			if(c.parse_cie(old_position, data, max, eh_addr))
+			if(c.parse_cie(old_position, data, max, eh_addr, is_be))
 				return true;
 			cies.push_back(c);
 		}
@@ -1837,7 +1878,7 @@ bool split_eh_frame_impl_t<ptrsize>::iterate_fdes()
 			fde_contents_t<ptrsize> f;
 			auto cie_position = cie_offset_position - cie_offset;
 			//cout << "FDE length="<< dec << act_length << " cie=[" << setw(6) << hex << cie_position << "]" << endl;
-			if(f.parse_fde(old_position, cie_position, data, max, eh_addr, gcc_except_table_scoop.get()))
+			if(f.parse_fde(old_position, cie_position, data, max, eh_addr, gcc_except_table_scoop.get(), is_be))
 				return true;
 			//const auto old_fde_size=fdes.size();
 			fdes.insert(f);
@@ -1854,13 +1895,13 @@ bool split_eh_frame_impl_t<ptrsize>::iterate_fdes()
 
 
 template <int ptrsize>
-bool split_eh_frame_impl_t<ptrsize>::parse()
+bool split_eh_frame_impl_t<ptrsize>::parse(const bool is_be)
 {
 	if(eh_frame_scoop==NULL)
 		return true; // no frame info in this binary
 
 
-	if(iterate_fdes())
+	if(iterate_fdes(is_be))
 		return true;
 
 	return false;
@@ -1889,13 +1930,6 @@ const EHProgramInstructionVector_t* eh_program_t<ptrsize>::getInstructions() con
 		transform(ALLOF(instructions), back_inserter(instructions_cache), [](const eh_program_insn_t<ptrsize> &a) { return &a;});
 	}
 	return &instructions_cache;
-#if 0
-	auto ret=shared_ptr<EHProgramInstructionVector_t>(new EHProgramInstructionVector_t());
-	transform(ALLOF(getInstructionsInternal()), back_inserter(*ret), 
-		[](const eh_program_insn_t<ptrsize> &a) { return shared_ptr<EHProgramInstruction_t>(new eh_program_insn_t<ptrsize>(a));});
-	return shared_ptr<EHProgramInstructionVector_t>(ret);
-#endif
-	
 }
 
 template <int ptrsize>
@@ -1906,12 +1940,6 @@ const TypeTableVector_t* lsda_t<ptrsize>::getTypeTable() const
 		transform(ALLOF(type_table), back_inserter(type_table_cache), [](const lsda_type_table_entry_t<ptrsize> &a) { return &a; });
 	}
 	return &type_table_cache;
-#if 0
-	auto ret=shared_ptr<TypeTableVector_t>(new TypeTableVector_t());
-	transform(ALLOF(type_table), back_inserter(*ret), 
-		[](const lsda_type_table_entry_t<ptrsize> &a) { return shared_ptr<LSDATypeTableEntry_t>(new lsda_type_table_entry_t<ptrsize>(a));});
-	return shared_ptr<TypeTableVector_t>(ret);
-#endif
 }
 
 
@@ -1923,12 +1951,6 @@ const CallSiteVector_t* lsda_t<ptrsize>::getCallSites() const
 		transform(ALLOF(call_site_table), back_inserter(call_site_table_cache), [](const lsda_call_site_t<ptrsize> &a) { return &a;});
 	}
 	return &call_site_table_cache;
-#if 0
-	auto ret=shared_ptr<CallSiteVector_t>(new CallSiteVector_t());
-	transform(ALLOF(call_site_table), back_inserter(*ret), 
-		[](const lsda_call_site_t<ptrsize> &a) { return shared_ptr<LSDACallSite_t>(new lsda_call_site_t<ptrsize>(a));});
-	return shared_ptr<CallSiteVector_t>(ret);
-#endif
 }
 
 
@@ -1940,12 +1962,6 @@ const FDEVector_t*  split_eh_frame_impl_t<ptrsize>::getFDEs() const
 		transform(ALLOF(fdes), back_inserter(fdes_cache), [](const fde_contents_t<ptrsize> &a) { return &a; });
 	}
 	return &fdes_cache;
-#if 0
-	auto ret=shared_ptr<FDEVector_t>(new FDEVector_t());
-	transform(ALLOF(fdes), back_inserter(*ret), 
-		[](const fde_contents_t<ptrsize> &a) { return shared_ptr<FDEContents_t>(new fde_contents_t<ptrsize>(a));});
-	return shared_ptr<FDEVector_t>(ret);
-#endif
 }
 
 template <int ptrsize>
@@ -1956,12 +1972,6 @@ const CIEVector_t*  split_eh_frame_impl_t<ptrsize>::getCIEs() const
 		transform(ALLOF(cies), back_inserter(cies_cache), [](const cie_contents_t<ptrsize> &a) { return &a; });
 	}
 	return &cies_cache;
-#if 0
-	auto ret=shared_ptr<CIEVector_t>(new CIEVector_t());
-	transform(ALLOF(cies), back_inserter(*ret), 
-		[](const cie_contents_t<ptrsize> &a){ return shared_ptr<CIEContents_t>(new cie_contents_t<ptrsize>(a));});
-	return ret;
-#endif
 }
 
 template <int ptrsize>
@@ -2002,10 +2012,17 @@ unique_ptr<const EHFrameParser_t> EHFrameParser_t::factory(const string filename
 	const auto ptrsize = elfiop->get_class()==ELFCLASS64 ? 8 :
 	                     elfiop->get_class()==ELFCLASS32 ? 4 : 
 	                     0; 
+
+	const auto file_endianness = 
+		elfiop->get_encoding() == ELFDATA2LSB ? LITTLE :
+		elfiop->get_encoding() == ELFDATA2MSB ? BIG    : 
+		throw invalid_argument("Cannot detect endianness of binary file");
+
+
 	if(ptrsize==0)
 		throw invalid_argument(string() + "Invalid ELF class in : " + filename);
 
-	return EHFrameParser_t::factory(ptrsize,
+	return EHFrameParser_t::factory(ptrsize, file_endianness,
 			eh_frame_section.first, eh_frame_section.second,
 			eh_frame_hdr_section.first, eh_frame_hdr_section.second,
 			gcc_except_table_section.first, gcc_except_table_section.second);
@@ -2015,6 +2032,7 @@ unique_ptr<const EHFrameParser_t> EHFrameParser_t::factory(const string filename
 
 unique_ptr<const EHFrameParser_t> EHFrameParser_t::factory(
 	uint8_t ptrsize,
+	EHPEndianness_t endian_type,
 	const string eh_frame_data, const uint64_t eh_frame_data_start_addr,
 	const string eh_frame_hdr_data, const uint64_t eh_frame_hdr_data_start_addr,
 	const string gcc_except_table_data, const uint64_t gcc_except_table_data_start_addr
@@ -2031,7 +2049,21 @@ unique_ptr<const EHFrameParser_t> EHFrameParser_t::factory(
 	else
 		throw out_of_range("ptrsize must be 4 or 8");
 
-	ret_val->parse();
+
+	const auto is_big_endian = [] () -> bool
+	{
+	    union 
+	    {
+		uint32_t i;
+		char c[4];
+	    } bint = {0x01020304};
+
+	    return bint.c[0] == 1;
+	};
+
+	const auto is_be = endian_type == BIG || ( is_big_endian() && endian_type == HOST) ;
+
+	ret_val->parse(is_be);
 
 	return unique_ptr<const EHFrameParser_t>(ret_val);
 }

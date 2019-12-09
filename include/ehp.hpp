@@ -152,14 +152,14 @@ class LSDA_t
 	virtual uint8_t getTTEncoding() const =0;
 	virtual void print() const=0;
 	virtual uint64_t getLandingPadBaseAddress() const = 0;
-    virtual const CallSiteVector_t* getCallSites() const =0;
+	virtual const CallSiteVector_t* getCallSites() const =0;
 	virtual uint64_t getCallSiteTableAddress() const = 0;
 	virtual uint64_t getCallSiteTableAddressLocation() const = 0;
 	virtual uint8_t getCallSiteTableEncoding() const = 0;
-    virtual const TypeTableVector_t* getTypeTable() const =0;
+	virtual const TypeTableVector_t* getTypeTable() const =0;
 	virtual uint64_t getTypeTableAddress() const = 0;
 	virtual uint64_t getTypeTableAddressLocation() const = 0;
-    virtual uint64_t getCallSiteTableLength() const = 0;
+	virtual uint64_t getCallSiteTableLength() const = 0;
 	virtual uint8_t getTypeTableEncoding() const = 0;
 	unique_ptr<LSDA_t> factory(const string lsda_data, const uint64_t lsda_start_addr);
 };
@@ -182,15 +182,16 @@ class FDEContents_t
 	virtual const LSDA_t* getLSDA() const =0;
 	virtual uint64_t getLSDAAddress() const =0;
 	virtual uint64_t getStartAddressPosition() const = 0;
-    virtual uint64_t getEndAddressPosition() const = 0;
-    virtual uint64_t getEndAddressSize() const = 0;
-    virtual uint64_t getLSDAAddressPosition() const = 0;
-    virtual uint64_t getLSDAAddressSize() const = 0;
+	virtual uint64_t getEndAddressPosition() const = 0;
+	virtual uint64_t getEndAddressSize() const = 0;
+	virtual uint64_t getLSDAAddressPosition() const = 0;
+	virtual uint64_t getLSDAAddressSize() const = 0;
 	virtual void print() const=0;	// move to ostream?  toString?
 
 };
 
 
+using EHPEndianness_t = enum EHPEndianness { HOST, BIG, LITTLE } ;
 using FDEVector_t = vector<const FDEContents_t*>;
 using CIEVector_t = vector<const CIEContents_t*>;
 class EHFrameParser_t 
@@ -198,9 +199,9 @@ class EHFrameParser_t
 	protected:
 	EHFrameParser_t() {}
 	EHFrameParser_t(const EHFrameParser_t&) {}
+	virtual bool parse(const bool is_be)=0;
 	public:
 	virtual ~EHFrameParser_t() {}
-	virtual bool parse()=0;
 	virtual void print() const=0;
 	virtual const FDEVector_t* getFDEs() const =0;
 	virtual const CIEVector_t* getCIEs() const =0;
@@ -209,8 +210,10 @@ class EHFrameParser_t
 #if USE_ELFIO 
 	static unique_ptr<const EHFrameParser_t> factory(const string filename);
 #endif
+
 	static unique_ptr<const EHFrameParser_t> factory(
 		uint8_t ptrsize,
+		EHPEndianness_t endian_style,
 		const string eh_frame_data, const uint64_t eh_frame_data_start_addr,
 		const string eh_frame_hdr_data, const uint64_t eh_frame_hdr_data_start_addr,
 		const string gcc_except_table_data, const uint64_t gcc_except_table_data_start_addr
