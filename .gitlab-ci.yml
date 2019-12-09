@@ -24,6 +24,34 @@ do-clean-ubuntu18:
   tags:
     - ubuntu18
 
+do-clean-ubuntu16:
+  stage: clean
+  script:
+    - ./cicd_testing/do-clean.sh
+  tags:
+    - ubuntu16
+
+do-clean-arm32:
+  stage: clean
+  script:
+    - ./cicd_testing/do-clean.sh
+  tags:
+    - arm32
+
+do-clean-arm64:
+  stage: clean
+  script:
+    - ./cicd_testing/do-clean.sh
+  tags:
+    - arm64
+
+do-clean-centos76:
+  stage: clean
+  script:
+    - ./cicd_testing/do-clean.sh
+  tags:
+    - centos76
+
 #
 # Building
 #
@@ -34,6 +62,35 @@ do-build-ubuntu18:
   tags:
     - ubuntu18
 
+do-build-ubuntu16:
+  stage: build
+  script:
+    - ./cicd_testing/do-build.sh
+  tags:
+    - ubuntu16
+
+do-build-arm64:
+  stage: build
+  script:
+    - ./cicd_testing/do-build.sh
+  tags:
+    - arm64
+
+do-build-arm32:
+  stage: build
+  script:
+    - ./cicd_testing/do-build.sh
+  tags:
+    - arm32
+
+do-build-centos76:
+  stage: build
+  script:
+    - ./cicd_testing/do-build.sh
+  tags:
+    - centos76
+
+
 #
 # Testing
 #
@@ -43,6 +100,35 @@ do-test-ubuntu18:
     - ./cicd_testing/do-test.sh
   tags:
     - ubuntu18
+
+do-test-ubuntu16:
+  stage: test
+  script:
+    - ./cicd_testing/do-test.sh
+  tags:
+    - ubuntu16
+
+do-test-arm32:
+  stage: test
+  script:
+    - ./cicd_testing/do-test.sh
+  tags:
+    - arm32
+
+do-test-arm64:
+  stage: test
+  script:
+    - ./cicd_testing/do-test.sh
+  tags:
+    - arm64
+
+
+do-test-centos76:
+  stage: test
+  script:
+    - ./cicd_testing/do-test.sh
+  tags:
+    - centos76
 
 
 #
