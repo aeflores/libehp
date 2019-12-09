@@ -1,7 +1,7 @@
 // @HEADER_COMPONENT libehp
 // @HEADER_LANG C++
 // @HEADER_BEGIN
-// Seef is a funny dude
+
 /*
    Copyright 2017-2019 University of Virginia
 
@@ -19,8 +19,6 @@
 */
 
 // @HEADER_END
-
-// add comment -- trigger fuzzing
 
 #ifndef ehp_hpp
 #define ehp_hpp
