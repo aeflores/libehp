@@ -839,8 +839,6 @@ bool eh_program_insn_t<ptrsize>::parse_insn(
 					pos+=uleb;
 					if(pos>max)
 						return true;
-					if(pos>max)
-						return true;
 					break;
 				}
 				case DW_CFA_expression:
@@ -1151,6 +1149,8 @@ bool cie_contents_t<ptrsize>::parse_cie(
 		return true;
 
 	auto end_pos=position+length;
+	if(end_pos > max)
+		return true;
 
 	auto cie_id=uint32_t(0);
 	if(this->read_type(cie_id, position, eh_frame_scoop_data, max, is_be))
@@ -1745,9 +1745,9 @@ bool fde_contents_t<ptrsize>::parse_fde(
 	if(this->read_length(length, pos, eh_frame_scoop_data, max, is_be))
 		return true;
 
-
 	auto end_pos=pos+length;
-	//auto end_length_position=pos;
+	if(end_pos > max)
+		return true;
 
 	auto cie_id=uint32_t(0);
 	if(this->read_type(cie_id, pos, eh_frame_scoop_data, max, is_be))
