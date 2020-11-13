@@ -14,7 +14,7 @@ function main()
 
 	# force reinstall tools so we are always up-to-date
 	yes | sudo bash -c "$(curl -fsSL allzp.zephyr-software.io/turbo/cli-install.sh)"
-
+	echo core >/proc/sys/kernel/core_pattern
 
 	# docker run starts a container.  since we started with --restart, it should come back up
 	# docker run -d --restart unless-stopped -p 55155:55155 git.zephyr-software.com:4567/allzp/turbo/turbo:latest
@@ -30,7 +30,7 @@ function main()
 	turbo-cli seed add $bid cicd_testing/ehp-seed4.yaml || true
 
 	local vid=$(turbo-cli version add -q $bid lib/libehp.so)
-	turbo-cli fuzz --fuzz-config cicd_testing/afl.yaml --app-config cicd_testing/ehp-config.yaml --ver-id $vid
+		turbo-cli fuzz --fuzz-config cicd_testing/afl.yaml --app-config cicd_testing/ehp-config.yaml --ver-id $vid
 
 	local report="$(turbo-cli log get report $vid)"
 
