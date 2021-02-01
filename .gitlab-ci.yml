@@ -134,12 +134,12 @@ do-test-centos76:
 #
 # Turbo Fuzzing
 #
-do-fuzz-ubuntu18:
-  stage: fuzz
-  script:
-    - ./cicd_testing/do-fuzz.sh
-  tags:
-    - libehpfuzzpod
+#do-fuzz-ubuntu18:
+  #stage: fuzz
+  #script:
+  #  - ./cicd_testing/do-fuzz.sh
+  #tags:
+    #- libehpfuzzpod
 
 #
 # Deploy
