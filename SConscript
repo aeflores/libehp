@@ -22,12 +22,12 @@ env.Replace(debug=ARGUMENTS.get("debug",0))
 env.Append(CFLAGS=" -DUSE_ELFIO=1 ")
 env.Append(CXXFLAGS=" -DUSE_ELFIO=1 ")
 if int(env['debug']) == 1:
-        print "Setting debug mode"
+        print("Setting debug mode")
         env.Append(CFLAGS=" -g ")
         env.Append(CXXFLAGS=" -g ")
         env.Append(LINKFLAGS=" -g ")
 else:
-        print "Setting release mode"
+        print("Setting release mode")
         env.Append(CFLAGS=" -O3 ")
         env.Append(CXXFLAGS=" -O3 ")
         env.Append(LINKFLAGS=" -O3 ")
