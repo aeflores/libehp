@@ -20,10 +20,15 @@
 
 // @HEADER_END
 
-#ifdef _WIN32
+// Get windows specific headers needed for byte-swapping
+#ifdef _WIN32 
 #  include <windows.h>
 #  undef max
 #  undef min
+#endif // _WIN32 
+
+// Sort Windows/Apple specific byte swapping macros.
+#if defined(_WIN32) || defined(__APPLE__)
 #  if defined(_MSC_VER)
 #    define htobe16(x) _byteswap_ushort(x)
 #    define htole16(x) (x)
@@ -39,7 +44,6 @@
 #    define htole64(x) (x)
 #    define be64toh(x) _byteswap_uint64(x)
 #    define le64toh(x) (x)
-
 #  elif defined(__GNUC__) || defined(__clang__)
 
 #    define htobe16(x) __builtin_bswap16(x)
@@ -58,7 +62,7 @@
 #    define le64toh(x) (x)
 
 #  endif // _MSC_VER
-#endif // _WIN32
+#endif // _WIN32 || __APPLE__
 
 #include <iostream>
 #include <iomanip>
