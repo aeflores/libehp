@@ -10,9 +10,17 @@ Notes:
 1. Additional documentation will be provided in later versions 
 1. API is incomplete and untested in some areas.  Future versions will improve stability.
 1. Use `git clone --recursive` to pull down required submodules
-1. Build with `scons`, add `debug=1` for debug build, add '--no_elfio' to compile without the third party libraries
 
-## Compilation with cmake
+
+# Building
+## Building with Scons
+
+Build with `scons`.
+
+1. Add `debug=1` for debug build.
+1. Add '--no_elfio' to compile without the third party libraries
+
+## Build with Cmake
 
 To compile with cmake type:
 
@@ -30,3 +38,8 @@ cmake . -Bbuild  -DUSE_ELFIO=ON
 cd build
 cmake --build .
 ```
+
+
+# Known Uses:
+
+LibEHP is used in [Grammatech's Datalog Diassembler projects](https://github.com/GrammaTech/ddisasm)
