@@ -17,6 +17,13 @@ stages:
 #
 # Cleaning
 #
+do-clean-ubuntu20:
+  stage: clean
+  script:
+    - ./cicd_testing/do-clean.sh
+  tags:
+    - ubuntu20
+
 do-clean-ubuntu18:
   stage: clean
   script:
@@ -55,6 +62,13 @@ do-clean-centos76:
 #
 # Building
 #
+do-build-ubuntu20:
+  stage: build
+  script:
+    - ./cicd_testing/do-build.sh
+  tags:
+    - ubuntu20
+
 do-build-ubuntu18:
   stage: build
   script:
@@ -94,6 +108,13 @@ do-build-centos76:
 #
 # Testing
 #
+do-test-ubuntu20:
+  stage: test
+  script:
+    - ./cicd_testing/do-test.sh
+  tags:
+    - ubuntu20
+
 do-test-ubuntu18:
   stage: test
   script:
