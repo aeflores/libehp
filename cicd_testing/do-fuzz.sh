@@ -13,7 +13,7 @@ function main()
 	cd ..
 
 	# force reinstall tools so we are always up-to-date
-	yes | sudo bash -c "$(curl -fsSL allzp.zephyr-software.io/turbo/cli-install.sh)"
+	yes | sudo bash -c "$(curl -fsSL allzp.pages.zephyr-software.com/turbo/cli-install.sh)"
 	sudo bash -c 'echo core >/proc/sys/kernel/core_pattern'
 
 	# docker run starts a container.  since we started with --restart, it should come back up
