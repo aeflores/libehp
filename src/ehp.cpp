@@ -1668,9 +1668,9 @@ bool lsda_t<ptrsize>::parse_lsda(
 
 	if(type_table_encoding!=DW_EH_PE_omit)
 	{
-		for(const auto cs_tab_entry : call_site_table)
+		for(const auto &cs_tab_entry : call_site_table)
 		{
-			for(const auto act_tab_entry : cs_tab_entry.getActionTableInternal())
+			for(const auto &act_tab_entry : cs_tab_entry.getActionTableInternal())
 			{
 				const auto type_filter=act_tab_entry.getAction();
 				const auto parse_and_insert_tt_entry = [&] (const uint64_t index) -> bool

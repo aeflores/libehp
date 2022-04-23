@@ -17,6 +17,13 @@ stages:
 #
 # Cleaning
 #
+do-clean-ubuntu22:
+  stage: clean
+  script:
+    - ./cicd_testing/do-clean.sh
+  tags:
+    - ubuntu22
+
 do-clean-ubuntu20:
   stage: clean
   script:
@@ -62,6 +69,13 @@ do-clean-centos76:
 #
 # Building
 #
+do-build-ubuntu22:
+  stage: build
+  script:
+    - ./cicd_testing/do-build.sh
+  tags:
+    - ubuntu22
+
 do-build-ubuntu20:
   stage: build
   script:
@@ -108,6 +122,13 @@ do-build-centos76:
 #
 # Testing
 #
+do-test-ubuntu22:
+  stage: test
+  script:
+    - ./cicd_testing/do-test.sh
+  tags:
+    - ubuntu22
+
 do-test-ubuntu20:
   stage: test
   script:
@@ -151,16 +172,6 @@ do-test-centos76:
   tags:
     - centos76
 
-
-#
-# Turbo Fuzzing
-#
-#do-fuzz-ubuntu18:
-  #stage: fuzz
-  #script:
-  #  - ./cicd_testing/do-fuzz.sh
-  #tags:
-    #- libehpfuzzpod
 
 #
 # Deploy
